@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Prévial — {{ titre }}{% endblock %}
+
+{% block content %}
+
+{% set icones = {
+  "Multirisque professionnelle": "🏢",
+  "Responsabilité civile pro": "🛡️",
+  "Mutuelle TNS": "❤️",
+  "Prévoyance indépendant": "⚕️",
+  "Plan Épargne Retraite": "💰",
+  "Retraite complémentaire": "🌅"
+} %}
+
+<section class="liste-header">
+  <h1>{{ titre }}</h1>
+  <p>{{ sous_titre }}</p>
+</section>
+
+<div class="grid-products">
+  {% for produit in produits %}
+  <a href="/produits/{{ produit.id }}{% if vers_devis %}/devis{% endif %}" class="product-card">
+    <div class="product-icon">{{ icones.get(produit.nom, "📄") }}</div>
+    <h3>{{ produit.nom }}</h3>
+    <p>{{ produit.description }}</p>
+    <span class="product-cta">{% if vers_devis %}Demander un devis{% else %}Découvrir{% endif %}</span>
+  </a>
+  {% endfor %}
+</div>
+
+{% endblock %}

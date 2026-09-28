@@ -37,7 +37,38 @@ def accueil():
 def catalogue():
     produits = Produit.query.all()
     return render_template("catalogue.html", produits=produits)
+@app.route("/devis")
+def devis_choix():
+    produits = Produit.query.all()
+    return render_template(
+        "liste_produits.html",
+        produits=produits,
+        titre="Obtenir un devis",
+        sous_titre="Choisissez le produit qui vous intéresse pour démarrer votre demande.",
+        vers_devis=True
+    )
 
+@app.route("/particuliers")
+def page_particuliers():
+    produits = Produit.query.all()
+    return render_template(
+        "liste_produits.html",
+        produits=produits,
+        titre="Particuliers",
+        sous_titre="Nos solutions pour vous et vos proches.",
+        vers_devis=False
+    )
+
+@app.route("/professionnels")
+def page_professionnels():
+    produits = Produit.query.all()
+    return render_template(
+        "liste_produits.html",
+        produits=produits,
+        titre="Professionnels",
+        sous_titre="Nos solutions pour les indépendants et les entreprises.",
+        vers_devis=False
+    )
 @app.route("/produits/<int:produit_id>")
 def fiche_produit(produit_id):
     produit = Produit.query.get_or_404(produit_id)

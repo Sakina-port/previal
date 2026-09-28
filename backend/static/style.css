@@ -437,3 +437,21 @@ html{
   margin-bottom:16px;
   line-height:1.5;
 }
+
+.liste-header{
+  text-align:center;
+  padding:60px 40px 0;
+}
+.liste-header h1{
+  font-size:32px;
+  color:var(--ink);
+  margin:0 0 10px;
+}
+.liste-header p{
+  color:var(--muted);
+  font-size:15px;
+  margin:0;
+}
+.liste-header + .grid-products{
+  margin-top:40px;
+}
