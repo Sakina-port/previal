@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Prévial — Accueil{% endblock %}
+
+{% block content %}
+  <section class="hero-banner" data-bg="{{ url_for('static', filename='hero.jpg.avif') }}">
+    <div class="hero-banner-overlay">
+      <h1>Obtenir un devis</h1>
+      <p>Comparez, choisissez et signez votre contrat en quelques minutes.</p>
+      <a href="/devis" class="btn-primary">Obtenir un devis</a>
+    </div>
+  </section>
+
+  <div class="quick-links">
+    <a href="#footer-contact" class="quick-link-item">
+      <div class="quick-link-icon">📞</div>
+      <span>Nous contacter</span>
+    </a>
+  </div>
+
+  {% set icones = {
+    "Multirisque professionnelle": "🏢",
+    "Responsabilité civile pro": "🛡️",
+    "Mutuelle TNS": "❤️",
+    "Prévoyance indépendant": "⚕️",
+    "Plan Épargne Retraite": "💰",
+    "Retraite complémentaire": "🌅"
+  } %}
+
+ <div class="grid-products">
+  {% for produit in produits %}
+  <a href="/produits/{{ produit.id }}" class="product-card">
+    <div class="product-icon">{{ icones.get(produit.nom, "📄") }}</div>
+    <h3><span class="product-chevron"></span>{{ produit.nom }}</h3>
+    <p>{{ produit.description }}</p>
+    <span class="product-cta">Découvrir</span>
+  </a>
+  {% endfor %}
+</div>
+
+  <section class="choix-section">
+    <div class="choix-image" data-bg="{{ url_for('static', filename='choix.jpg') }}"></div>
+    <div class="choix-texte">
+      <h2>Vous avez le choix.<br>Nous vous aidons à<br>faire le bon choix.</h2>
+      <p>Assurance, santé, prévoyance, retraite… les besoins changent, les offres aussi. En tant que courtier, nous comparons les solutions de nos partenaires pour vous accompagner vers une couverture adaptée à votre situation.</p>
+    </div>
+  </section>
+
+<section class="page-header">
+  <h1>Qui sommes-nous ?</h1>
+  
+<p>PREVIAL, c'est l'histoire d'un courtage pensé autour d'une conviction simple : l'assurance doit s'adapter aux besoins de chacun.
+Santé, prévoyance, assurance emprunteur… nous accompagnons particuliers, TNS et entreprises dans leurs choix, en nous appuyant sur un réseau de partenaires et de solutions adaptées à chaque situation.
+Pour mieux nous connaître, découvrez notre expertise, nos solutions et notre vision du courtage en assurance.</p>
+</section>
+
+<section class="valeurs-section">
+  <div class="valeur-card">
+    <div class="valeur-photo" data-bg="{{ url_for('static', filename='valeur1.jpg') }}"></div>
+    <h3>Un accompagnement humain</h3>
+    <p>Nos conseillers prennent le temps de comprendre votre situation avant de vous orienter.</p>
+  </div>
+  <div class="valeur-card">
+    <div class="valeur-photo" data-bg="{{ url_for('static', filename='valeur2.jpg') }}"></div>
+    <h3>Une comparaison honnête</h3>
+    <p>En tant que courtier, nous comparons les offres de nos partenaires pour trouver la plus adaptée.</p>
+  </div>
+  <div class="valeur-card">
+    <div class="valeur-photo" data-bg="{{ url_for('static', filename='valeur3.jpg') }}"></div>
+    <h3>Une relation de confiance</h3>
+    <p>Nous vous accompagnons dans la durée, bien au-delà de la simple souscription.</p>
+  </div>
+</section>
+
+<footer id="footer-contact" class="site-footer">
+  <div class="footer-content">
+    <div class="footer-logo">Previal</div>
+    <div class="footer-contact-infos">
+      <p>📧 contact@previal.fr</p>
+      <p>📞 01 23 45 67 89</p>
+      <p>🔗 <a href="https://www.linkedin.com/company/previal" target="_blank">LinkedIn</a></p>
+    </div>
+  </div>
+</footer>
+
+{% endblock %}

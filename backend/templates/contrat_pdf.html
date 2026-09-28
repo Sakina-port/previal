@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  body{ font-family: Arial, sans-serif; color:#20242C; padding:40px; font-size:13px; }
+  .logo{ font-size:24px; font-weight:bold; color:#1C2B45; margin-bottom:10px; }
+  .sous-titre{ color:#5B6270; font-size:12px; margin-bottom:30px; }
+  h1{ color:#1C2B45; font-size:20px; border-bottom:2px solid #B98A4B; padding-bottom:10px; }
+  table{ width:100%; border-collapse:collapse; margin:20px 0; }
+  td{ padding:8px 0; border-bottom:1px solid #D9D5C9; }
+  td.label{ color:#5B6270; width:40%; }
+  .prix{ font-size:20px; color:#1C2B45; font-weight:bold; }
+  .mentions{ margin-top:40px; font-size:10px; color:#5B6270; }
+</style>
+</head>
+<body>
+  <div class="logo">Prévial</div>
+  <div class="sous-titre">Contrat d'assurance</div>
+
+  <h1>{{ produit.nom }}</h1>
+
+  <table>
+    <tr><td class="label">Numéro de dossier</td><td>{{ dossier.id }}</td></tr>
+    <tr><td class="label">Date de souscription</td><td>{{ date_du_jour }}</td></tr>
+    {% for cle, valeur in dossier.reponses.items() %}
+    <tr><td class="label">{{ cle }}</td><td>{{ valeur }}</td></tr>
+    {% endfor %}
+    <tr><td class="label">Montant</td><td class="prix">{{ devis.montant }}€ / mois</td></tr>
+  </table>
+
+  <p class="mentions">
+    Ce contrat est établi sur la base des informations fournies par le souscripteur.
+    Prévial agit en tant qu'intermédiaire en assurance.
+  </p>
+  <p class="label" style="margin-top:30px;">Signature</p>
+  <img src="{{ signature_data }}" style="width:200px; border-bottom:1px solid #1C2B45;">
+</body>
+</html>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Prévial  Votre devis{% endblock %}
+
+{% block content %}
+<div class="form-wrap" style="text-align:center;">
+  <h1>Votre devis est prêt</h1>
+  <p class="intro">Pour {{ produit.nom }}</p>
+
+  <div class="quote-box" style="display:inline-block; text-align:left; margin:20px 0;">
+    <p style="font-size:32px; color:var(--ink); margin:0;">{{ devis.montant }}€ <span style="font-size:14px; color:var(--muted);">/ mois</span></p>
+  </div>
+
+  <p class="intro">Dossier n°{{ dossier.id }}</p>
+
+  <div style="display:flex; gap:12px; justify-content:center;">
+  <a href="/dossiers/{{ dossier.id }}/refuser" class="btn-primary" style="background:transparent; color:var(--muted); border:1px solid var(--line);">Je refuse</a>
+  <a href="/dossiers/{{ dossier.id }}/signature" class="btn-primary">Signature électronique</a>
+</div>
+ 
+</div>
+{% endblock %}

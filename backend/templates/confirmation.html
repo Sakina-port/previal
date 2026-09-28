@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Prévial — Demande envoyée{% endblock %}
+
+{% block content %}
+<div class="form-wrap" style="text-align:center;">
+  <h1>Merci !</h1>
+  <p class="intro">
+    Votre demande de devis pour <strong>{{ produit.nom }}</strong> a bien été prise en compte.
+  </p>
+  <p class="intro">
+    Numéro de dossier : <strong>{{ dossier_id }}</strong>
+  </p>
+  <a href="/catalogue" class="btn-primary">Retour aux produits</a>
+</div>
+{% endblock %}

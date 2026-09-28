@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Prévial{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="site-header">
+  <div class="logo">Previal</div>
+  <nav class="site-nav"> 
+    <a href="/particuliers">Particuliers</a>
+    <a href="/professionnels">Professionnels</a>
+  </nav>
+  <a href="/compte" class="btn-espace-client">Espace Client</a>
+</header>
+
+{% block content %}{% endblock %}
+
+<div class="chatbot-bulle" id="chatbot-bulle">💬</div>
+
+<div class="chatbot-panneau" id="chatbot-panneau">
+  <div class="chatbot-header">
+    Assistant Prévial
+    <span id="chatbot-fermer">✕</span>
+  </div>
+  <div class="chatbot-corps">
+    <p>Bonjour 👋 Cette fonctionnalité arrive bientôt. En attendant, contactez-nous directement !</p>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('[data-bg]').forEach(function(el){
+    el.style.backgroundImage = "url('" + el.getAttribute('data-bg') + "')";
+  });
+
+  const bulle = document.getElementById('chatbot-bulle');
+  const panneau = document.getElementById('chatbot-panneau');
+  const fermer = document.getElementById('chatbot-fermer');
+
+  bulle.addEventListener('click', () => {
+    panneau.classList.toggle('ouvert');
+  });
+  fermer.addEventListener('click', () => {
+    panneau.classList.remove('ouvert');
+  });
+</script>
+</body>
+</html>

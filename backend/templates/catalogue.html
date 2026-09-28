@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Prévial — Nos produits{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1>Nos produits</h1>
+    <p>Cliquez sur un produit pour démarrer votre devis.</p>
+  </section>
+
+  <div class="grid-products">
+{% for produit in produits %}
+<a href="/produits/{{ produit.id }}" class="product-card">
+  <div class="tag">{{ produit.categorie }}</div>
+  <h3>{{ produit.nom }}</h3>
+  <p>{{ produit.description }}</p>
+</a>
+{% endfor %}    
+  </div>
+{% endblock %}
