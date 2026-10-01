@@ -20,11 +20,11 @@
 
 <div class="grid-products">
   {% for produit in produits %}
-  <a href="/produits/{{ produit.id }}{% if vers_devis %}/devis{% endif %}" class="product-card">
+  <a href="/produits/{{ produit.id }}" class="product-card"></a>
     <div class="product-icon">{{ icones.get(produit.nom, "📄") }}</div>
     <h3>{{ produit.nom }}</h3>
     <p>{{ produit.description }}</p>
-    <span class="product-cta">{% if vers_devis %}Demander un devis{% else %}Découvrir{% endif %}</span>
+    <span class="product-cta">Découvrir</span>
   </a>
   {% endfor %}
 </div>

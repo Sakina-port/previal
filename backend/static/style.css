@@ -455,3 +455,29 @@ html{
 .liste-header + .grid-products{
   margin-top:40px;
 }
+
+.btn-disabled{
+  background:var(--muted);
+  cursor:default;
+  opacity:0.7;
+}
+.fiche-garanties{
+  list-style:none;
+  padding:0;
+  margin:20px 0 26px;
+}
+.fiche-garanties li{
+  padding-left:24px;
+  position:relative;
+  font-size:14px;
+  color:var(--text);
+  margin-bottom:10px;
+  line-height:1.5;
+}
+.fiche-garanties li::before{
+  content:"✓";
+  position:absolute;
+  left:0;
+  color:var(--ink);
+  font-weight:700;
+}

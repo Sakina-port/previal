@@ -16,6 +16,7 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change-moi-plus-tard')
+DEVIS_ACTIF = False
 db.init_app(app)
 configurer_mail(app)
 
@@ -37,6 +38,7 @@ def accueil():
 def catalogue():
     produits = Produit.query.all()
     return render_template("catalogue.html", produits=produits)
+
 @app.route("/devis")
 def devis_choix():
     produits = Produit.query.all()
@@ -76,6 +78,8 @@ def fiche_produit(produit_id):
 
 @app.route("/produits/<int:produit_id>/devis", methods=["GET", "POST"])
 def formulaire(produit_id):
+    if not DEVIS_ACTIF:
+        return render_template("fonctionnalite_desactivee.html")
     produit = Produit.query.get_or_404(produit_id)
 
     if request.method == "POST":
@@ -114,6 +118,8 @@ def refuser_devis(dossier_id):
 
 @app.route("/dossiers/<int:dossier_id>/signature", methods=["GET", "POST"])
 def signature(dossier_id):
+    if not DEVIS_ACTIF:
+        return render_template("fonctionnalite_desactivee.html")
     dossier = Dossier.query.get_or_404(dossier_id)
     produit = Produit.query.get(dossier.produit_id)
     devis = Devis.query.filter_by(dossier_id=dossier.id).first()

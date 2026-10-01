@@ -21,6 +21,8 @@ class Produit(db.Model):
     nom = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text)
     categorie = db.Column(db.String(100))
+    presentation = db.Column(db.Text)
+    garanties = db.Column(db.JSON)
     formulaire_schema = db.Column(db.JSON)
 
 

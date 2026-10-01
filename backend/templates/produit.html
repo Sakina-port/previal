@@ -4,13 +4,13 @@
 
 {% block content %}
 
-{% set lotties = {
-  "Multirisque professionnelle": "bureau.json",
-  "Responsabilité civile pro": "protection.json",
-  "Mutuelle TNS": "sante.json",
-  "Prévoyance indépendant": "prevoyance.json",
-  "Plan Épargne Retraite": "epargne.json",
-  "Retraite complémentaire": "retraite.json"
+{% set images = {
+  "Mutuelle santé particuliers": "sante.jpg",
+  "Mutuelle santé seniors": "sante.jpg",
+  "Mutuelle santé TNS": "sante-tns.jpg",
+  "Prévoyance TNS": "prevoyance-tns.jpg",
+  "Assurance emprunteur": "emprunteur.jpg",
+  "Plan Épargne Retraite": "retraite.jpg"
 } %}
 
 <section class="fiche-hero">
@@ -18,30 +18,27 @@
 
   <div class="fiche-grid">
     <div class="fiche-illustration">
-      <div id="lottie-anim"></div>
+      <img src="{{ url_for('static', filename=images.get(produit.nom, 'sante.jpg')) }}" alt="{{ produit.nom }}" style="width:100%; max-width:380px; border-radius:14px;">
     </div>
 
     <div class="fiche-infos">
       <div class="fiche-tag">{{ produit.categorie }}</div>
       <h1>{{ produit.nom }}</h1>
-      <p class="fiche-desc">{{ produit.description }}</p>
+      <p class="fiche-desc">{{ produit.presentation }}</p>
+
+      {% if produit.garanties %}
+      <ul class="fiche-garanties">
+        {% for garantie in produit.garanties %}
+        <li>{{ garantie }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
       <div class="fiche-devis-box">
         <p>Obtenez votre devis personnalisé pour ce produit, en quelques minutes.</p>
-        <a href="/produits/{{ produit.id }}/devis" class="btn-primary">Obtenir mon devis</a>
       </div>
     </div>
   </div>
 </section>
-
-<script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js"></script>
-<script>
-  lottie.loadAnimation({
-    container: document.getElementById('lottie-anim'),
-    renderer: 'svg',
-    loop: true,
-    autoplay: true,
-    path: "{{ url_for('static', filename='lottie/' + lotties.get(produit.nom, 'protection.json')) }}"
-  });
-</script>
 
 {% endblock %}
