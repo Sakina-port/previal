@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
@@ -16,7 +16,7 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change-moi-plus-tard')
-DEVIS_ACTIF = False
+AFFICHER_FONCTIONNALITES_MASQUEES = os.getenv('AFFICHER_FONCTIONNALITES_MASQUEES', 'False') == 'True'
 db.init_app(app)
 configurer_mail(app)
 
@@ -78,8 +78,8 @@ def fiche_produit(produit_id):
 
 @app.route("/produits/<int:produit_id>/devis", methods=["GET", "POST"])
 def formulaire(produit_id):
-    if not DEVIS_ACTIF:
-        return render_template("fonctionnalite_desactivee.html")
+    if not AFFICHER_FONCTIONNALITES_MASQUEES:
+        abort(404)
     produit = Produit.query.get_or_404(produit_id)
 
     if request.method == "POST":
@@ -118,8 +118,8 @@ def refuser_devis(dossier_id):
 
 @app.route("/dossiers/<int:dossier_id>/signature", methods=["GET", "POST"])
 def signature(dossier_id):
-    if not DEVIS_ACTIF:
-        return render_template("fonctionnalite_desactivee.html")
+    if not AFFICHER_FONCTIONNALITES_MASQUEES:
+        abort(404)
     dossier = Dossier.query.get_or_404(dossier_id)
     produit = Produit.query.get(dossier.produit_id)
     devis = Devis.query.filter_by(dossier_id=dossier.id).first()
