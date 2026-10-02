@@ -1,6 +1,7 @@
 import os
 from flask_mail import Mail, Message
 
+
 mail = Mail()
 
 def configurer_mail(app):
@@ -11,6 +12,35 @@ def configurer_mail(app):
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     mail.init_app(app)
 
+def envoyer_accuse_reception(destinataire, numero_dossier):
+    if not os.getenv('MAIL_USERNAME') or not os.getenv('MAIL_PASSWORD'):
+        print(f"[E-MAIL NON ENVOYÉ] Accusé de réception. Destinataire prévu : {destinataire}")
+        return False
+
+    msg = Message(
+        subject=f"PREVIAL - Nous avons bien reçu votre demande ({numero_dossier})",
+        sender=os.getenv('MAIL_USERNAME'),
+        recipients=[destinataire],
+        body=f"Bonjour,\n\nNous avons bien reçu votre demande (dossier {numero_dossier}).\nUn conseiller Prévial va vous recontacter prochainement.\n\nCordialement,\nL'équipe Prévial"
+    )
+    mail.send(msg)
+    return True
+
+
+def notifier_equipe_nouvelle_demande(numero_dossier, besoin, nom, prenom, commentaire):
+    if not os.getenv('MAIL_USERNAME') or not os.getenv('MAIL_PASSWORD'):
+        print(f"[E-MAIL NON ENVOYÉ] Notification équipe pour {numero_dossier}")
+        return False
+    texte_commentaire = commentaire if commentaire else "Aucun commentaire laissé"
+    
+    msg = Message(
+        subject=f"PREVIAL - Nouvelle demande {numero_dossier}",
+        sender=os.getenv('MAIL_USERNAME'),
+        recipients=["sakinaawa123@gmail.com"],
+        body=f"Nouvelle demande de contact.\n\nDossier : {numero_dossier}\nDe : {prenom} {nom}\nBesoin : {besoin}\nCommentaire : {texte_commentaire}\n\nConsultez l'espace privé pour le détail complet."
+    )
+    mail.send(msg)
+    return True
 
 def envoyer_documents(destinataire, produit_nom, dossier_id, chemin_devis, chemin_contrat):
     if not os.getenv('MAIL_USERNAME') or not os.getenv('MAIL_PASSWORD'):
@@ -18,7 +48,7 @@ def envoyer_documents(destinataire, produit_nom, dossier_id, chemin_devis, chemi
         return False
 
     msg = Message(
-        subject=f"Prévial — Votre contrat {produit_nom}",
+        subject=f"PREVIAL Votre contrat {produit_nom}",
         sender=os.getenv('MAIL_USERNAME'),
         recipients=[destinataire],
         body=f"Bonjour,\n\nVeuillez trouver ci-joint votre devis et votre contrat pour {produit_nom} (dossier n°{dossier_id}).\n\nCordialement,\nL'équipe Prévial"

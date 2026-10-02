@@ -9,7 +9,7 @@ from datetime import date, datetime
 from weasyprint import HTML
 from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur
 from moteur_devis import obtenir_devis
-from mailer import configurer_mail, envoyer_documents
+from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande
 
 load_dotenv()
 
@@ -32,7 +32,7 @@ def load_user(user_id):
 @app.route("/")
 def accueil():
     produits = Produit.query.all()
-    return render_template("accueil.html", produits=produits)
+    return render_template("accueil.html", produits=produits, numero_dossier=None)
 
 @app.route("/catalogue")
 def catalogue():
@@ -244,8 +244,49 @@ def deconnexion():
     return redirect("/")
 
 
+@app.route("/contact", methods=["POST"])
+def contact():
+    reponses = {
+        "civilite": request.form.get("civilite"),
+        "nom": request.form.get("nom"),
+        "prenom": request.form.get("prenom"),
+        "telephone": request.form.get("telephone"),
+        "email": request.form.get("email"),
+        "code_postal": request.form.get("code_postal"),
+        "ville": request.form.get("ville"),
+        "profil": request.form.get("profil"),
+        "besoin": request.form.get("besoin"),
+        "moyen_contact_prefere": request.form.get("moyen_contact_prefere"),
+        "creneau_souhaite": request.form.get("creneau_souhaite"),
+        "commentaire": request.form.get("commentaire"),
+    }
+
+    nouveau_dossier = Dossier(
+        statut="nouveau",
+        source="interne",
+        reponses=reponses
+    )
+    db.session.add(nouveau_dossier)
+    db.session.commit()
+
+    nouveau_dossier.numero_dossier = f"PRV-{date.today().year}-{nouveau_dossier.id:06d}"
+    db.session.commit()
+
+    envoyer_accuse_reception(reponses["email"], nouveau_dossier.numero_dossier)
+    notifier_equipe_nouvelle_demande(
+        nouveau_dossier.numero_dossier,
+        reponses["besoin"],
+        reponses["nom"],
+        reponses["prenom"],
+        reponses["commentaire"]
+    )
+
+    produits = Produit.query.all()
+    return render_template("accueil.html", produits=produits, numero_dossier=nouveau_dossier.numero_dossier)
+
+
 with app.app_context():
     db.create_all()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True)  

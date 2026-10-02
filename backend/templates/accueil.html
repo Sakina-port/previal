@@ -7,7 +7,8 @@
     <div class="hero-banner-overlay">
       <h1>Obtenir un devis</h1>
       <p>Comparez, choisissez et signez votre contrat en quelques minutes.</p>
-     
+      <a href="#formulaire-contact" class="btn-primary">Être recontacté</a>
+    </div>
   </section>
 
   <div class="quick-links">
@@ -17,23 +18,23 @@
     </a>
   </div>
 
-  {% set icones = {
-    "Multirisque professionnelle": "🏢",
-    "Responsabilité civile pro": "🛡️",
-    "Mutuelle TNS": "❤️",
-    "Prévoyance indépendant": "⚕️",
-    "Plan Épargne Retraite": "💰",
-    "Retraite complémentaire": "🌅"
+  {% set images = {
+    "Mutuelle santé particuliers": "sante.jpg",
+    "Mutuelle santé seniors": "sante1.jpg",
+    "Mutuelle santé TNS": "sante-tns.jpg",
+    "Prévoyance TNS": "prevoyance-tns.jpg",
+    "Assurance emprunteur": "emprunteur.jpg",
+    "Plan Épargne Retraite": "retraite.jpg"
   } %}
 
- <div class="grid-products">
+  <div class="grid-products">
   {% for produit in produits %}
-  <a href="/produits/{{ produit.id }}" class="product-card">
-    <div class="product-icon">{{ icones.get(produit.nom, "📄") }}</div>
-    <h3><span class="product-chevron"></span>{{ produit.nom }}</h3>
+  <div class="product-card">
+    <img src="{{ url_for('static', filename=images.get(produit.nom, 'sante.jpg')) }}" alt="{{ produit.nom }}" class="product-image">
+    <h3>{{ produit.nom }}</h3>
     <p>{{ produit.description }}</p>
-    <span class="product-cta">Découvrir</span>
-  </a>
+    <a href="/produits/{{ produit.id }}" class="product-cta">Découvrir</a>
+  </div>
   {% endfor %}
 </div>
 
@@ -42,6 +43,117 @@
     <div class="choix-texte">
       <h2>Vous avez le choix.<br>Nous vous aidons à<br>faire le bon choix.</h2>
       <p>Assurance, santé, prévoyance, retraite… les besoins changent, les offres aussi. En tant que courtier, nous comparons les solutions de nos partenaires pour vous accompagner vers une couverture adaptée à votre situation.</p>
+    </div>
+  </section>
+
+  <section id="formulaire-contact" class="contact-section">
+    <div class="contact-section-inner">
+      <h2>Être contacté</h2>
+      <p class="contact-intro">Remplissez ce formulaire, un conseiller Prévial vous recontacte rapidement.</p>
+
+      {% if numero_dossier %}
+      <div class="contact-confirmation">
+        <p>Merci ! Votre demande a bien été enregistrée sous le numéro <strong>{{ numero_dossier }}</strong>. Un conseiller Prévial vous recontacte prochainement.</p>
+      </div>
+      {% else %}
+      <form method="POST" action="/contact" id="form-contact">
+
+        <div class="form-step" data-step="1">
+          <div class="form-group">
+            <label>Civilité</label>
+            <select name="civilite" required>
+              <option value="Monsieur">Monsieur</option>
+              <option value="Madame">Madame</option>
+            </select>
+          </div>
+          <div class="form-row" style="display:flex; gap:14px;">
+            <div class="form-group" style="flex:1;">
+              <label>Nom</label>
+              <input type="text" name="nom" required>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>Prénom</label>
+              <input type="text" name="prenom" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input type="tel" name="telephone" required>
+          </div>
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" name="email" required>
+          </div>
+          <button type="button" class="btn-primary btn-suivant" style="width:100%;">Suivant</button>
+        </div>
+
+        <div class="form-step" data-step="2" style="display:none;">
+          <div class="form-row" style="display:flex; gap:14px;">
+            <div class="form-group" style="flex:1;">
+              <label>Code postal</label>
+              <input type="text" name="code_postal" required>
+            </div>
+            <div class="form-group" style="flex:2;">
+              <label>Ville</label>
+              <input type="text" name="ville" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Vous êtes</label>
+            <select name="profil" required>
+              <option value="Particulier">Particulier</option>
+              <option value="TNS">TNS (indépendant)</option>
+              <option value="Entreprise">Entreprise</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Votre besoin</label>
+            <select name="besoin" required>
+              <option value="Santé">Santé</option>
+              <option value="Prévoyance">Prévoyance</option>
+              <option value="Santé + Prévoyance">Santé + Prévoyance</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="btn-primary btn-retour" style="flex:1; background:transparent; color:var(--ink); border:1px solid var(--line);">Retour</button>
+            <button type="button" class="btn-primary btn-suivant" style="flex:1;">Suivant</button>
+          </div>
+        </div>
+
+        <div class="form-step" data-step="3" style="display:none;">
+          <div class="form-group">
+            <label>Moyen de contact préféré</label>
+            <select name="moyen_contact_prefere" required>
+              <option value="Téléphone">Téléphone</option>
+              <option value="E-mail">E-mail</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Créneau souhaité</label>
+            <select name="creneau_souhaite">
+              <option value="Matin">Matin</option>
+              <option value="Après-midi">Après-midi</option>
+              <option value="Soir">Soir</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Un commentaire ? (facultatif)</label>
+            <textarea name="commentaire" rows="4" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:5px; font-family:inherit;"></textarea>
+            <p style="font-size:12px; color:var(--muted); margin-top:6px;">Merci de ne communiquer aucune information médicale ou document de santé ici.</p>
+          </div>
+          <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; margin:20px 0;">
+            <input type="checkbox" name="rgpd" required style="margin-top:3px;">
+            J'accepte que mes données soient utilisées par Prévial pour traiter ma demande. (texte à valider par la direction)
+          </label>
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="btn-primary btn-retour" style="flex:1; background:transparent; color:var(--ink); border:1px solid var(--line);">Retour</button>
+            <button type="submit" class="btn-primary" style="flex:1;">Envoyer ma demande</button>
+          </div>
+        </div>
+
+      </form>
+      {% endif %}
     </div>
   </section>
 
@@ -81,5 +193,30 @@ Pour mieux nous connaître, découvrez notre expertise, nos solutions et notre v
     </div>
   </div>
 </footer>
+
+<script>
+  const etapes = document.querySelectorAll('.form-step');
+  let etapeActuelle = 1;
+
+  function afficherEtape(numero) {
+    etapes.forEach(etape => {
+      etape.style.display = etape.dataset.step == numero ? 'block' : 'none';
+    });
+  }
+
+  document.querySelectorAll('.btn-suivant').forEach(bouton => {
+    bouton.addEventListener('click', () => {
+      etapeActuelle++;
+      afficherEtape(etapeActuelle);
+    });
+  });
+
+  document.querySelectorAll('.btn-retour').forEach(bouton => {
+    bouton.addEventListener('click', () => {
+      etapeActuelle--;
+      afficherEtape(etapeActuelle);
+    });
+  });
+</script>
 
 {% endblock %}

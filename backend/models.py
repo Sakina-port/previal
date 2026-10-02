@@ -26,16 +26,17 @@ class Produit(db.Model):
     formulaire_schema = db.Column(db.JSON)
 
 
+
 class Dossier(db.Model):
     __tablename__ = 'dossiers'
     id = db.Column(db.Integer, primary_key=True)
+    numero_dossier = db.Column(db.String(20), unique=True)
     utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'))
-    produit_id = db.Column(db.Integer, db.ForeignKey('produits.id'))
-    statut = db.Column(db.String(50), default='en_cours')
+    produit_id = db.Column(db.Integer, db.ForeignKey('produits.id'), nullable=True)
+    statut = db.Column(db.String(50), default='nouveau')
     source = db.Column(db.String(50), default='interne')
     reponses = db.Column(db.JSON)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
-
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow) #On veut que l element soit  aussi ici et l autre cpote p tout est dans le meme  les carte sont coolle ensemble et je n aipas fait qu on puiosse dissocier de ca ehe et apres o fera ca comme vca  
 
 class Devis(db.Model):
     __tablename__ = 'devis'
