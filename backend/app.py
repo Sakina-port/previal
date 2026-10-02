@@ -261,6 +261,16 @@ def contact():
         "commentaire": request.form.get("commentaire"),
     }
 
+    champs_obligatoires = ["civilite", "nom", "prenom", "telephone", "email", "code_postal", "ville", "profil", "besoin"]
+    champ_manquant = False
+    for champ in champs_obligatoires:
+        if not reponses[champ]:
+            champ_manquant = True
+
+    if champ_manquant:
+        produits = Produit.query.all()
+        return render_template("accueil.html", produits=produits, numero_dossier=None, erreur_formulaire="Merci de remplir tous les champs obligatoires avant d'envoyer votre demande.")
+
     nouveau_dossier = Dossier(
         statut="nouveau",
         source="interne",
@@ -289,4 +299,4 @@ with app.app_context():
     db.create_all()
 
 if __name__ == "__main__":
-    app.run(debug=True)  
+    app.run(debug=True)
