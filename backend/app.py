@@ -294,6 +294,9 @@ def contact():
     produits = Produit.query.all()
     return render_template("accueil.html", produits=produits, numero_dossier=nouveau_dossier.numero_dossier)
 
+@app.route("/contact-info")
+def contact_info():
+    return render_template("contact_info.html")
 
 with app.app_context():
     db.create_all()

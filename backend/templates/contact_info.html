@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Prévial — Contact{% endblock %}
+
+{% block content %}
+<section class="hero-banner" data-bg="{{ url_for('static', filename='contact.jpg') }}">
+  <div class="hero-banner-overlay">
+    <h1>Nous contacter</h1>
+    <p>Notre équipe est à votre écoute pour répondre à toutes vos questions.</p>
+  </div>
+</section>
+
+<section class="contact-info-section">
+  <div class="contact-info-card">
+   <img src="{{ url_for('static', filename='contact-email.jpg') }}" alt="E-mail" class="contact-info-image"> 
+    <h3>E-mail</h3>
+    <p><a href="mailto:contact@previal.fr">contact@previal.fr</a></p>
+  </div>
+  <div class="contact-info-card">
+   <img src="{{ url_for('static', filename='contact-telephone.jpg') }}" alt="Telephone" class="contact-info-image">
+    <h3>Téléphone</h3>
+    <p><a href="tel:0123456789">01 23 45 67 89</a></p>
+  </div>
+  <div class="contact-info-card">
+    <img src="{{ url_for('static', filename='contact-linkedin.jpg') }}" alt="linkedin" class="contact-info-image">
+    <h3>LinkedIn</h3>
+    <p><a href="https://www.linkedin.com/company/previal" target="_blank">Suivez-nous</a></p>
+  </div>
+</section>
+
+<section class="contact-cta-section">
+  <p>Vous préférez remplir un formulaire ?</p>
+  <a href="/#formulaire-contact" class="btn-primary">Être recontacté</a>
+</section>
+{% endblock %}
