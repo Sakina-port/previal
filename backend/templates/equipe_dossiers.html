@@ -60,7 +60,7 @@
       {% for d in dossiers.items %}
       {% set r = d.reponses or {} %}
       <tr>
-        <td>{{ d.numero_dossier }}</td>
+        <td><a href="/equipe/dossiers/{{ d.id }}" class="equipe-lien-dossier">{{ d.numero_dossier }}</a></td>
         <td>{{ r.get('nom', '') }}</td>
         <td>{{ r.get('prenom', '') }}</td>
         <td>{{ r.get('telephone', '') }}</td>

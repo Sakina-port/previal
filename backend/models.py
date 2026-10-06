@@ -81,3 +81,10 @@ class Grossiste(db.Model):
     nom = db.Column(db.String(100))
     cle_api = db.Column(db.String(255))
     actif = db.Column(db.Boolean, default=False)
+class Historique(db.Model):
+    __tablename__ = 'historique'
+    id = db.Column(db.Integer, primary_key=True)
+    dossier_id = db.Column(db.Integer, db.ForeignKey('dossiers.id'), nullable=False)
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=True)
+    action = db.Column(db.String(255), nullable=False)
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)

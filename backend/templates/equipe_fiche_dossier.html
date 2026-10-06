@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}PREVIAL — Dossier {{ dossier.numero_dossier }}{% endblock %}
+
+{% block content %}
+<div class="equipe-wrap">
+  <div class="equipe-entete">
+    <div>
+      <h1>{{ reponses.get('civilite', '') }} {{ reponses.get('prenom', '') }} {{ reponses.get('nom', '') }}</h1>
+      <p class="equipe-sous-titre">Dossier {{ dossier.numero_dossier }} · créé le {{ dossier.date_creation.strftime('%d/%m/%Y') }}</p>
+    </div>
+    <a href="/equipe/dossiers" class="btn-primary equipe-deconnexion">Retour à la liste</a>
+  </div>
+
+  <div class="fiche-equipe-bloc">
+    <h2 class="equipe-titre-section">Statut du dossier</h2>
+    <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/statut" class="equipe-filtres">
+      <select name="statut">
+        {% for valeur, libelle in statuts %}
+        <option value="{{ valeur }}" {% if valeur == dossier.statut %}selected{% endif %}>{{ libelle }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn-primary">Enregistrer le statut</button>
+    </form>
+  </div>
+
+  <div class="fiche-equipe-bloc">
+    <h2 class="equipe-titre-section">Coordonnées</h2>
+    <table class="equipe-table">
+      <tr><th>Téléphone</th><td>{{ reponses.get('telephone', '') }}</td></tr>
+      <tr><th>E-mail</th><td>{{ reponses.get('email', '') }}</td></tr>
+      <tr><th>Code postal</th><td>{{ reponses.get('code_postal', '') }}</td></tr>
+      <tr><th>Ville</th><td>{{ reponses.get('ville', '') }}</td></tr>
+    </table>
+  </div>
+
+  <div class="fiche-equipe-bloc">
+    <h2 class="equipe-titre-section">Demande</h2>
+    <table class="equipe-table">
+      <tr><th>Profil</th><td>{{ reponses.get('profil', '') }}</td></tr>
+      <tr><th>Besoin</th><td>{{ reponses.get('besoin', '') }}</td></tr>
+      <tr><th>Contact préféré</th><td>{{ reponses.get('moyen_contact_prefere', '') }}</td></tr>
+      <tr><th>Créneau souhaité</th><td>{{ reponses.get('creneau_souhaite', '') }}</td></tr>
+      <tr><th>Commentaire</th><td>{{ reponses.get('commentaire') or 'Aucun commentaire.' }}</td></tr>
+    </table>
+  </div>
+
+  <div class="fiche-equipe-bloc">
+    <h2 class="equipe-titre-section">Historique</h2>
+    {% if historique %}
+    <table class="equipe-table equipe-table-historique">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Action</th>
+          <th>Par</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in historique %}
+        <tr>
+          <td>{{ h.date.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ h.action }}</td>
+          <td>{{ h.auteur }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="equipe-vide">Aucune action enregistrée pour ce dossier.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

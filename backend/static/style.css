@@ -665,3 +665,21 @@ html{
   font-family:inherit;
   min-width:300px;
 }
+.fiche-equipe-bloc{
+  margin-bottom:36px;
+}
+.equipe-lien-dossier{
+  color:var(--ink);
+  font-weight:600;
+  text-decoration:none;
+}
+.equipe-lien-dossier:hover{
+  color:var(--gold);
+  text-decoration:underline;
+}
+.equipe-table th{
+  width:200px;
+}
+.equipe-table-historique th{
+  width:auto;
+}

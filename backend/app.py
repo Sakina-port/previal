@@ -7,11 +7,10 @@ import bcrypt
 import base64
 from datetime import date, datetime
 from weasyprint import HTML
-from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur
+from sqlalchemy import or_
+from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande
-from sqlalchemy import or_
-
 
 load_dotenv()
 
@@ -25,6 +24,19 @@ configurer_mail(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "compte"
+
+STATUTS = [
+    ("nouveau", "Nouveau"),
+    ("a_contacter", "À contacter"),
+    ("contacte", "Contacté"),
+    ("besoin_a_analyser", "Besoin à analyser"),
+    ("en_attente_de_pieces", "En attente de pièces"),
+    ("devis_en_cours", "Devis en cours"),
+    ("proposition_envoyee", "Proposition envoyée"),
+    ("souscription_en_cours", "Souscription en cours"),
+    ("client", "Client"),
+    ("sans_suite", "Sans suite"),
+]
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -73,6 +85,7 @@ def page_professionnels():
         sous_titre="Nos solutions pour les indépendants et les entreprises.",
         vers_devis=False
     )
+
 @app.route("/produits/<int:produit_id>")
 def fiche_produit(produit_id):
     produit = Produit.query.get_or_404(produit_id)
@@ -284,6 +297,12 @@ def contact():
     nouveau_dossier.numero_dossier = f"PRV-{date.today().year}-{nouveau_dossier.id:06d}"
     db.session.commit()
 
+    db.session.add(Historique(
+        dossier_id=nouveau_dossier.id,
+        action="Demande reçue via le formulaire de contact"
+    ))
+    db.session.commit()
+
     envoyer_accuse_reception(reponses["email"], nouveau_dossier.numero_dossier)
     notifier_equipe_nouvelle_demande(
         nouveau_dossier.numero_dossier,
@@ -296,9 +315,11 @@ def contact():
     produits = Produit.query.all()
     return render_template("accueil.html", produits=produits, numero_dossier=nouveau_dossier.numero_dossier)
 
+
 @app.route("/contact-info")
 def contact_info():
     return render_template("contact_info.html")
+
 
 @app.route("/equipe", methods=["GET", "POST"])
 def equipe_connexion():
@@ -316,25 +337,12 @@ def equipe_connexion():
 
     return render_template("equipe_connexion.html")
 
-STATUTS = [
-    ("nouveau", "Nouveau"),
-    ("a_contacter", "À contacter"),
-    ("contacte", "Contacté"),
-    ("besoin_a_analyser", "Besoin à analyser"),
-    ("en_attente_de_pieces", "En attente de pièces"),
-    ("devis_en_cours", "Devis en cours"),
-    ("proposition_envoyee", "Proposition envoyée"),
-    ("souscription_en_cours", "Souscription en cours"),
-    ("client", "Client"),
-    ("sans_suite", "Sans suite"),
-]
+
 @app.route("/equipe/tableau-de-bord")
 @login_required
 def equipe_tableau_de_bord():
     if current_user.role != "admin":
         abort(404)
-
-    
 
     compteurs = []
     for valeur, libelle in STATUTS:
@@ -348,7 +356,8 @@ def equipe_tableau_de_bord():
         compteurs=compteurs,
         derniers_dossiers=derniers_dossiers
     )
-   
+
+
 @app.route("/equipe/dossiers")
 @login_required
 def equipe_dossiers():
@@ -363,8 +372,8 @@ def equipe_dossiers():
 
     requete = Dossier.query
 
-    if q:
-        motif = f"%{q}%"
+    for mot in q.split():
+        motif = f"%{mot}%"
         requete = requete.filter(or_(
             Dossier.numero_dossier.like(motif),
             Dossier.reponses["nom"].as_string().collate("utf8mb4_general_ci").like(motif),
@@ -403,6 +412,59 @@ def equipe_dossiers():
         tri=tri,
         q=q
     )
+
+
+@app.route("/equipe/dossiers/<int:dossier_id>")
+@login_required
+def equipe_fiche_dossier(dossier_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    dossier = Dossier.query.get_or_404(dossier_id)
+
+    entrees = Historique.query.filter_by(dossier_id=dossier.id).order_by(Historique.date_creation.desc()).all()
+    historique = []
+    for e in entrees:
+        auteur = Utilisateur.query.get(e.utilisateur_id) if e.utilisateur_id else None
+        historique.append({
+            "action": e.action,
+            "date": e.date_creation,
+            "auteur": f"{auteur.prenom} {auteur.nom}" if auteur else "Système"
+        })
+
+    return render_template(
+        "equipe_fiche_dossier.html",
+        dossier=dossier,
+        reponses=dossier.reponses or {},
+        statuts=STATUTS,
+        libelles=dict(STATUTS),
+        historique=historique
+    )
+
+
+@app.route("/equipe/dossiers/<int:dossier_id>/statut", methods=["POST"])
+@login_required
+def equipe_changer_statut(dossier_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    dossier = Dossier.query.get_or_404(dossier_id)
+    nouveau_statut = request.form.get("statut")
+    libelles = dict(STATUTS)
+
+    if nouveau_statut in libelles and nouveau_statut != dossier.statut:
+        ancien_statut = dossier.statut
+        dossier.statut = nouveau_statut
+        db.session.add(Historique(
+            dossier_id=dossier.id,
+            utilisateur_id=current_user.id,
+            action=f"Statut changé de « {libelles.get(ancien_statut, ancien_statut)} » à « {libelles[nouveau_statut]} »"
+        ))
+        db.session.commit()
+
+    return redirect(f"/equipe/dossiers/{dossier.id}")
+
+
 with app.app_context():
     db.create_all()
 
