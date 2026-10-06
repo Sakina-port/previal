@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Espace collaborateurs{% endblock %}
+
+{% block content %}
+<div class="form-wrap" style="max-width:420px; text-align:center;">
+  <h1>Espace collaborateurs</h1>
+  <p class="intro">Accès réservé aux membres de l'équipe Prévial.</p>
+
+  {% if erreur %}
+    <p style="color:#B23B3B; font-size:13.5px; margin-bottom:16px;">{{ erreur }}</p>
+  {% endif %}
+
+  <form method="POST" action="/equipe">
+    <div class="form-group" style="text-align:left;">
+      <label>E-mail</label>
+      <input type="email" name="email" required>
+    </div>
+    <div class="form-group" style="text-align:left;">
+      <label>Mot de passe</label>
+      <input type="password" name="mot_de_passe" required>
+    </div>
+    <button type="submit" class="btn-primary" style="width:100%;">Se connecter</button>
+  </form>
+</div>
+{% endblock %}

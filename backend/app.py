@@ -298,6 +298,30 @@ def contact():
 def contact_info():
     return render_template("contact_info.html")
 
+@app.route("/equipe", methods=["GET", "POST"])
+def equipe_connexion():
+    if request.method == "POST":
+        email = request.form.get("email")
+        mot_de_passe_tape = request.form.get("mot_de_passe")
+
+        utilisateur = Utilisateur.query.filter_by(email=email).first()
+
+        if utilisateur and utilisateur.role == "admin" and bcrypt.checkpw(mot_de_passe_tape.encode('utf-8'), utilisateur.mot_de_passe.encode('utf-8')):
+            login_user(utilisateur)
+            return redirect("/equipe/tableau-de-bord")
+        else:
+            return render_template("equipe_connexion.html", erreur="Identifiants incorrects ou accès non autorisé.")
+
+    return render_template("equipe_connexion.html")
+
+
+@app.route("/equipe/tableau-de-bord")
+@login_required
+def equipe_tableau_de_bord():
+    if current_user.role != "admin":
+        abort(404)
+    return render_template("equipe_tableau_de_bord.html")
+
 with app.app_context():
     db.create_all()
 

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="form-wrap" style="text-align:center;">
+  <h1>Bonjour {{ current_user.prenom }} </h1>
+  <p class="intro">Tableau de bord de l'espace privé PREVIAL.</p>
+  <a href="/deconnexion" class="btn-primary" style="background:transparent; color:var(--ink); border:1px solid var(--line);">Se déconnecter</a>
+</div>
+{% endblock %}
