@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}PREVIAL — Dossiers{% endblock %}
+
+{% block content %}
+<div class="equipe-wrap equipe-wrap-large">
+  <div class="equipe-entete">
+    <div>
+      <h1>Toutes les demandes</h1>
+      <p class="equipe-sous-titre">{{ dossiers.total }} dossier(s)</p>
+    </div>
+    <a href="/equipe/tableau-de-bord" class="btn-primary equipe-deconnexion">Retour au tableau de bord</a>
+  </div>
+
+  <form method="GET" action="/equipe/dossiers" class="equipe-filtres">
+    <input type="text" name="q" value="{{ q }}" placeholder="Nom, prénom, e-mail, téléphone ou n° de dossier">
+
+    <select name="statut">
+      <option value="">Tous les statuts</option>
+      {% for valeur, libelle in statuts %}
+      <option value="{{ valeur }}" {% if valeur == statut_filtre %}selected{% endif %}>{{ libelle }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="profil">
+      <option value="">Tous les profils</option>
+      {% for p in ["Particulier", "TNS", "Entreprise"] %}
+      <option value="{{ p }}" {% if p == profil_filtre %}selected{% endif %}>{{ p }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="tri">
+      <option value="recent" {% if tri == "recent" %}selected{% endif %}>Plus récents d'abord</option>
+      <option value="ancien" {% if tri == "ancien" %}selected{% endif %}>Plus anciens d'abord</option>
+      <option value="nom" {% if tri == "nom" %}selected{% endif %}>Nom (A à Z)</option>
+      <option value="prenom" {% if tri == "prenom" %}selected{% endif %}>Prénom (A à Z)</option>
+      <option value="email" {% if tri == "email" %}selected{% endif %}>E-mail (A à Z)</option>
+      <option value="statut" {% if tri == "statut" %}selected{% endif %}>Statut</option>
+    </select>
+
+    <button type="submit" class="btn-primary">Rechercher</button>
+    <a href="/equipe/dossiers" class="equipe-reset">Réinitialiser</a>
+  </form>
+
+  {% if dossiers.items %}
+  <table class="equipe-table">
+    <thead>
+      <tr>
+        <th>Dossier</th>
+        <th>Nom</th>
+        <th>Prénom</th>
+        <th>Téléphone</th>
+        <th>E-mail</th>
+        <th>Besoin</th>
+        <th>Statut</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in dossiers.items %}
+      {% set r = d.reponses or {} %}
+      <tr>
+        <td>{{ d.numero_dossier }}</td>
+        <td>{{ r.get('nom', '') }}</td>
+        <td>{{ r.get('prenom', '') }}</td>
+        <td>{{ r.get('telephone', '') }}</td>
+        <td>{{ r.get('email', '') }}</td>
+        <td>{{ r.get('besoin', '') }}</td>
+        <td>{{ libelles.get(d.statut, d.statut) }}</td>
+        <td>{{ d.date_creation.strftime('%d/%m/%Y') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="equipe-pagination">
+    {% if dossiers.has_prev %}
+    <a href="/equipe/dossiers?page={{ dossiers.prev_num }}&q={{ q }}&statut={{ statut_filtre }}&profil={{ profil_filtre }}&tri={{ tri }}">← Précédent</a>
+    {% endif %}
+    <span>Page {{ dossiers.page }} sur {{ dossiers.pages }}</span>
+    {% if dossiers.has_next %}
+    <a href="/equipe/dossiers?page={{ dossiers.next_num }}&q={{ q }}&statut={{ statut_filtre }}&profil={{ profil_filtre }}&tri={{ tri }}">Suivant →</a>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="equipe-vide">Aucun dossier ne correspond à ces critères.</p>
+  {% endif %}
+</div>
+{% endblock %}

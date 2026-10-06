@@ -1,11 +1,53 @@
 {% extends "base.html" %}
 
-{% block title %}Tableau de bord{% endblock %}
+{% block title %}Prévial — Tableau de bord{% endblock %}
 
 {% block content %}
-<div class="form-wrap" style="text-align:center;">
-  <h1>Bonjour {{ current_user.prenom }} </h1>
-  <p class="intro">Tableau de bord de l'espace privé PREVIAL.</p>
-  <a href="/deconnexion" class="btn-primary" style="background:transparent; color:var(--ink); border:1px solid var(--line);">Se déconnecter</a>
+<div class="equipe-wrap">
+  <div class="equipe-entete">
+    <div>
+      <h1>Bonjour {{ current_user.prenom }}</h1>
+      <p class="equipe-sous-titre">Tableau de bord de l'espace privé Prévial</p>
+    </div>
+    <a href="/deconnexion" class="btn-primary equipe-deconnexion">Se déconnecter</a>
+  </div>
+
+  <div class="equipe-compteurs">
+    {% for c in compteurs %}
+    <div class="equipe-compteur">
+      <div class="equipe-compteur-nombre">{{ c.nombre }}</div>
+      <div class="equipe-compteur-libelle">{{ c.libelle }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2 class="equipe-titre-section">Dernières demandes</h2>
+<a href="/equipe/dossiers" class="btn-primary" style="margin-bottom:16px;">Voir toutes les demandes</a>
+  {% if derniers_dossiers %}
+  <table class="equipe-table">
+    <thead>
+      <tr>
+        <th>Dossier</th>
+        <th>Nom</th>
+        <th>Besoin</th>
+        <th>Statut</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in derniers_dossiers %}
+      <tr>
+        <td>{{ d.numero_dossier }}</td>
+        <td>{{ (d.reponses or {}).get('prenom', '') }} {{ (d.reponses or {}).get('nom', '') }}</td>
+        <td>{{ (d.reponses or {}).get('besoin', '') }}</td>
+        <td>{{ d.statut }}</td>
+        <td>{{ d.date_creation.strftime('%d/%m/%Y') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="equipe-vide">Aucune demande pour l'instant.</p>
+  {% endif %}
 </div>
 {% endblock %}

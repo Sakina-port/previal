@@ -10,6 +10,8 @@ from weasyprint import HTML
 from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande
+from sqlalchemy import or_
+
 
 load_dotenv()
 
@@ -314,14 +316,93 @@ def equipe_connexion():
 
     return render_template("equipe_connexion.html")
 
-
+STATUTS = [
+    ("nouveau", "Nouveau"),
+    ("a_contacter", "À contacter"),
+    ("contacte", "Contacté"),
+    ("besoin_a_analyser", "Besoin à analyser"),
+    ("en_attente_de_pieces", "En attente de pièces"),
+    ("devis_en_cours", "Devis en cours"),
+    ("proposition_envoyee", "Proposition envoyée"),
+    ("souscription_en_cours", "Souscription en cours"),
+    ("client", "Client"),
+    ("sans_suite", "Sans suite"),
+]
 @app.route("/equipe/tableau-de-bord")
 @login_required
 def equipe_tableau_de_bord():
     if current_user.role != "admin":
         abort(404)
-    return render_template("equipe_tableau_de_bord.html")
 
+    
+
+    compteurs = []
+    for valeur, libelle in STATUTS:
+        nombre = Dossier.query.filter_by(statut=valeur).count()
+        compteurs.append({"libelle": libelle, "nombre": nombre})
+
+    derniers_dossiers = Dossier.query.order_by(Dossier.date_creation.desc()).limit(10).all()
+
+    return render_template(
+        "equipe_tableau_de_bord.html",
+        compteurs=compteurs,
+        derniers_dossiers=derniers_dossiers
+    )
+   
+@app.route("/equipe/dossiers")
+@login_required
+def equipe_dossiers():
+    if current_user.role != "admin":
+        abort(404)
+
+    page = request.args.get("page", 1, type=int)
+    statut_filtre = request.args.get("statut", "")
+    profil_filtre = request.args.get("profil", "")
+    tri = request.args.get("tri", "recent")
+    q = request.args.get("q", "").strip()
+
+    requete = Dossier.query
+
+    if q:
+        motif = f"%{q}%"
+        requete = requete.filter(or_(
+            Dossier.numero_dossier.like(motif),
+            Dossier.reponses["nom"].as_string().collate("utf8mb4_general_ci").like(motif),
+            Dossier.reponses["prenom"].as_string().collate("utf8mb4_general_ci").like(motif),
+            Dossier.reponses["email"].as_string().collate("utf8mb4_general_ci").like(motif),
+            Dossier.reponses["telephone"].as_string().collate("utf8mb4_general_ci").like(motif),
+        ))
+
+    if statut_filtre:
+        requete = requete.filter(Dossier.statut == statut_filtre)
+    if profil_filtre:
+        requete = requete.filter(Dossier.reponses["profil"].as_string() == profil_filtre)
+
+    if tri == "ancien":
+        requete = requete.order_by(Dossier.date_creation.asc())
+    elif tri == "nom":
+        requete = requete.order_by(Dossier.reponses["nom"].as_string().asc())
+    elif tri == "prenom":
+        requete = requete.order_by(Dossier.reponses["prenom"].as_string().asc())
+    elif tri == "email":
+        requete = requete.order_by(Dossier.reponses["email"].as_string().asc())
+    elif tri == "statut":
+        requete = requete.order_by(Dossier.statut.asc())
+    else:
+        requete = requete.order_by(Dossier.date_creation.desc())
+
+    dossiers = requete.paginate(page=page, per_page=10, error_out=False)
+
+    return render_template(
+        "equipe_dossiers.html",
+        dossiers=dossiers,
+        statuts=STATUTS,
+        libelles=dict(STATUTS),
+        statut_filtre=statut_filtre,
+        profil_filtre=profil_filtre,
+        tri=tri,
+        q=q
+    )
 with app.app_context():
     db.create_all()
 
