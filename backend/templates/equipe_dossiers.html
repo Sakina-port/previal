@@ -67,7 +67,7 @@
         <td>{{ r.get('email', '') }}</td>
         <td>{{ r.get('besoin', '') }}</td>
         <td>{{ libelles.get(d.statut, d.statut) }}</td>
-        <td>{{ d.date_creation.strftime('%d/%m/%Y') }}</td>
+        <td>{{ d.date_creation|heure_paris("%d/%m/%Y") }}</td>
       </tr>
       {% endfor %}
     </tbody>

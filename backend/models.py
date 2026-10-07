@@ -4,6 +4,7 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+
 class Utilisateur(db.Model, UserMixin):
     __tablename__ = 'utilisateurs'
     id = db.Column(db.Integer, primary_key=True)
@@ -26,7 +27,6 @@ class Produit(db.Model):
     formulaire_schema = db.Column(db.JSON)
 
 
-
 class Dossier(db.Model):
     __tablename__ = 'dossiers'
     id = db.Column(db.Integer, primary_key=True)
@@ -36,7 +36,8 @@ class Dossier(db.Model):
     statut = db.Column(db.String(50), default='nouveau')
     source = db.Column(db.String(50), default='interne')
     reponses = db.Column(db.JSON)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow) #On veut que l element soit  aussi ici et l autre cpote p tout est dans le meme  les carte sont coolle ensemble et je n aipas fait qu on puiosse dissocier de ca ehe et apres o fera ca comme vca  
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class Devis(db.Model):
     __tablename__ = 'devis'
@@ -47,6 +48,7 @@ class Devis(db.Model):
     payload_brut = db.Column(db.JSON)
     fichier_pdf = db.Column(db.String(255))
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class Contrat(db.Model):
     __tablename__ = 'contrats'
@@ -81,6 +83,8 @@ class Grossiste(db.Model):
     nom = db.Column(db.String(100))
     cle_api = db.Column(db.String(255))
     actif = db.Column(db.Boolean, default=False)
+
+
 class Historique(db.Model):
     __tablename__ = 'historique'
     id = db.Column(db.Integer, primary_key=True)
@@ -88,3 +92,24 @@ class Historique(db.Model):
     utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=True)
     action = db.Column(db.String(255), nullable=False)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Note(db.Model):
+    __tablename__ = 'notes'
+    id = db.Column(db.Integer, primary_key=True)
+    dossier_id = db.Column(db.Integer, db.ForeignKey('dossiers.id'), nullable=False)
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=False)
+    contenu = db.Column(db.Text, nullable=False)
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+
+class DemandeDocuments(db.Model):
+    __tablename__ = 'demandes_documents'
+    id = db.Column(db.Integer, primary_key=True)
+    dossier_id = db.Column(db.Integer, db.ForeignKey('dossiers.id'), nullable=False)
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'),nullable=False)
+    pieces = db.Column(db.JSON, nullable=False)
+    token = db.Column(db.String(100), unique=True, nullable=True)
+    date_expiration = db.Column(db.DateTime, nullable=True)
+    revoquee = db.Column(db.Boolean, default=False)
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+

@@ -7,7 +7,7 @@
   <div class="equipe-entete">
     <div>
       <h1>{{ reponses.get('civilite', '') }} {{ reponses.get('prenom', '') }} {{ reponses.get('nom', '') }}</h1>
-      <p class="equipe-sous-titre">Dossier {{ dossier.numero_dossier }} · créé le {{ dossier.date_creation.strftime('%d/%m/%Y') }}</p>
+      <p class="equipe-sous-titre">Dossier {{ dossier.numero_dossier }} · créé le {{ dossier.date_creation|heure_paris("%d/%m/%Y") }}</p>
     </div>
     <a href="/equipe/dossiers" class="btn-primary equipe-deconnexion">Retour à la liste</a>
   </div>
@@ -44,6 +44,58 @@
       <tr><th>Commentaire</th><td>{{ reponses.get('commentaire') or 'Aucun commentaire.' }}</td></tr>
     </table>
   </div>
+  <div class="fiche-equipe-bloc">
+    <h2 class="equipe-titre-section">Documents</h2>
+    <p class="equipe-note-info">Aucun document médical ne doit être demandé ni transmis.</p>
+
+    <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/demande-documents" class="equipe-pieces-form">
+      {% for valeur, libelle in pieces %}
+      <label class="equipe-piece">
+        <input type="checkbox" name="pieces" value="{{ valeur }}"> {{ libelle }}
+      </label>
+      {% endfor %}
+      <button type="submit" class="btn-primary">Demander ces pièces</button>
+    </form>
+
+    {% if demandes %}
+    <h3 class="equipe-sous-titre-bloc">Demandes en cours</h3>
+    <table class="equipe-table equipe-table-historique">
+      <thead>
+        <tr><th>Date</th><th>Pièces demandées</th></tr>
+      </thead>
+      <tbody>
+        {% for dem in demandes %}
+        <tr>
+          <td>{{ dem.date_creation|heure_paris }}</td>
+          <td>{% for p in dem.pieces %}{{ libelles_pieces.get(p, p) }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+  <div class="fiche-equipe-bloc">
+    <h2 class="equipe-titre-section">Notes internes</h2>
+    <p class="equipe-note-info">Ces notes sont visibles uniquement par l'équipe PREVIAL.</p>
+
+    <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/notes" class="equipe-note-form">
+      <textarea name="contenu" rows="3" placeholder="Ex. : pas de réponse, rappeler mardi matin" required></textarea>
+      <button type="submit" class="btn-primary">Ajouter la note</button>
+    </form>
+
+    {% if notes %}
+    <div class="equipe-notes">
+      {% for n in notes %}
+      <div class="equipe-note">
+        <div class="equipe-note-entete">{{ n.auteur }} · {{ n.date|heure_paris }}</div>
+        <div class="equipe-note-contenu">{{ n.contenu }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="equipe-vide">Aucune note pour ce dossier.</p>
+    {% endif %}
+  </div>
 
   <div class="fiche-equipe-bloc">
     <h2 class="equipe-titre-section">Historique</h2>
@@ -59,7 +111,7 @@
       <tbody>
         {% for h in historique %}
         <tr>
-          <td>{{ h.date.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ h.date|heure_paris }}</td>
           <td>{{ h.action }}</td>
           <td>{{ h.auteur }}</td>
         </tr>
@@ -71,4 +123,5 @@
     {% endif %}
   </div>
 </div>
+
 {% endblock %}

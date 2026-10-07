@@ -14,10 +14,10 @@
 
   <div class="equipe-compteurs">
     {% for c in compteurs %}
-    <div class="equipe-compteur">
+    <a href="/equipe/dossiers?statut={{ c.valeur }}" class="equipe-compteur">
       <div class="equipe-compteur-nombre">{{ c.nombre }}</div>
       <div class="equipe-compteur-libelle">{{ c.libelle }}</div>
-    </div>
+    </a>
     {% endfor %}
   </div>
 
@@ -41,7 +41,7 @@
         <td>{{ (d.reponses or {}).get('prenom', '') }} {{ (d.reponses or {}).get('nom', '') }}</td>
         <td>{{ (d.reponses or {}).get('besoin', '') }}</td>
         <td>{{ d.statut }}</td>
-        <td>{{ d.date_creation.strftime('%d/%m/%Y') }}</td>
+        <td>{{ d.date_creation|heure_paris("%d/%m/%Y") }}</td>
       </tr>
       {% endfor %}
     </tbody>

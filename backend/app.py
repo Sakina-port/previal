@@ -8,9 +8,12 @@ import base64
 from datetime import date, datetime
 from weasyprint import HTML
 from sqlalchemy import or_
-from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique
+from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande
+from datetime import timezone
+from zoneinfo import ZoneInfo
+
 
 load_dotenv()
 
@@ -36,6 +39,14 @@ STATUTS = [
     ("souscription_en_cours", "Souscription en cours"),
     ("client", "Client"),
     ("sans_suite", "Sans suite"),
+]
+PIECES = [
+    ("piece_identique","Piece d'identité"),
+    ("rib", "RIB"),
+    ("justificatif_domicile","Justificatif de domicile"),
+    ("devis_existant","Devis existant"),
+    ("documents_contractuel", "Document contractuel"),
+    ("autre_piece","Autre piece")
 ]
 
 @login_manager.user_loader
@@ -347,7 +358,7 @@ def equipe_tableau_de_bord():
     compteurs = []
     for valeur, libelle in STATUTS:
         nombre = Dossier.query.filter_by(statut=valeur).count()
-        compteurs.append({"libelle": libelle, "nombre": nombre})
+        compteurs.append({"valeur": valeur, "libelle": libelle, "nombre": nombre})
 
     derniers_dossiers = Dossier.query.order_by(Dossier.date_creation.desc()).limit(10).all()
 
@@ -432,13 +443,27 @@ def equipe_fiche_dossier(dossier_id):
             "auteur": f"{auteur.prenom} {auteur.nom}" if auteur else "Système"
         })
 
+    lignes_notes = Note.query.filter_by(dossier_id=dossier.id).order_by(Note.date_creation.desc()).all()
+    notes = []
+    for n in lignes_notes:
+        auteur = Utilisateur.query.get(n.utilisateur_id)
+        notes.append({
+            "contenu": n.contenu,
+            "date": n.date_creation,
+            "auteur": f"{auteur.prenom} {auteur.nom}" if auteur else "Inconnu"
+        })
+    demandes = DemandeDocuments.query.filter_by(dossier_id=dossier.id).order_by(DemandeDocuments.date_creation.desc()).all()
     return render_template(
         "equipe_fiche_dossier.html",
         dossier=dossier,
         reponses=dossier.reponses or {},
         statuts=STATUTS,
         libelles=dict(STATUTS),
-        historique=historique
+        historique=historique,
+        notes=notes,
+        demandes=demandes,
+        pieces=PIECES,
+        libelles_pieces=dict(PIECES)
     )
 
 
@@ -464,6 +489,51 @@ def equipe_changer_statut(dossier_id):
 
     return redirect(f"/equipe/dossiers/{dossier.id}")
 
+
+@app.route("/equipe/dossiers/<int:dossier_id>/notes", methods=["POST"])
+@login_required
+def equipe_ajouter_note(dossier_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    dossier = Dossier.query.get_or_404(dossier_id)
+    contenu = request.form.get("contenu", "").strip()
+
+    if contenu:
+        db.session.add(Note(dossier_id=dossier.id, utilisateur_id=current_user.id, contenu=contenu))
+        db.session.add(Historique(dossier_id=dossier.id, utilisateur_id=current_user.id, action="Note interne ajoutée"))
+        db.session.commit()
+
+    return redirect(f"/equipe/dossiers/{dossier.id}")
+@app.template_filter("heure_paris")
+def heure_paris(valeur, format="%d/%m/%Y %H:%M"):
+    if valeur is None:
+        return ""
+    return valeur.replace(tzinfo=timezone.utc).astimezone(ZoneInfo("Europe/Paris")).strftime(format)
+@app.route("/equipe/dossiers/<int:dossier_id>/demande-documents", methods=["POST"])
+@login_required
+def equipe_demander_documents(dossier_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    dossier = Dossier.query.get_or_404(dossier_id)
+    libelles = dict(PIECES)
+    choisies = [p for p in request.form.getlist("pieces") if p in libelles]
+
+    if choisies:
+        db.session.add(DemandeDocuments(
+            dossier_id=dossier.id,
+            utilisateur_id=current_user.id,
+            pieces=choisies
+        ))
+        db.session.add(Historique(
+            dossier_id=dossier.id,
+            utilisateur_id=current_user.id,
+            action="Documents demandés : " + ", ".join(libelles[p] for p in choisies)
+        ))
+        db.session.commit()
+
+    return redirect(f"/equipe/dossiers/{dossier.id}")
 
 with app.app_context():
     db.create_all()
