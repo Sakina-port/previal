@@ -3,23 +3,27 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
 import os
+import secrets
 import bcrypt
 import base64
-from datetime import date, datetime
+import uuid
+import hashlib
+import filetype
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from weasyprint import HTML
 from sqlalchemy import or_
-from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments
+from models import db,   Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document
 from moteur_devis import obtenir_devis
-from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande
-from datetime import timezone
-from zoneinfo import ZoneInfo
-
+from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents
+from stockage import enregistrer_fichier 
 
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change-moi-plus-tard')
+app.config['MAX_CONTENT_LENGTH'] = 60*1024*1024
 AFFICHER_FONCTIONNALITES_MASQUEES = os.getenv('AFFICHER_FONCTIONNALITES_MASQUEES', 'False') == 'True'
 db.init_app(app)
 configurer_mail(app)
@@ -40,14 +44,31 @@ STATUTS = [
     ("client", "Client"),
     ("sans_suite", "Sans suite"),
 ]
+
 PIECES = [
-    ("piece_identique","Piece d'identité"),
+    ("piece_identite", "Pièce d'identité"),
     ("rib", "RIB"),
-    ("justificatif_domicile","Justificatif de domicile"),
-    ("devis_existant","Devis existant"),
-    ("documents_contractuel", "Document contractuel"),
-    ("autre_piece","Autre piece")
+    ("justificatif_domicile", "Justificatif de domicile"),
+    ("devis_existant", "Devis existant"),
+    ("document_contractuel", "Document contractuel"),
+    ("autre_piece", "Autre pièce autorisée"),
 ]
+
+DUREE_LIEN_HEURES = 48
+
+TYPES_AUTORISES = {
+    "application/pdf":"pdf",
+    "image/jpeg": "jpg",
+    "image/png" : "png",
+}
+TAILLE_MAX_FICHIER = 10*1024*1024
+
+@app.template_filter("heure_paris")
+def heure_paris(valeur, format="%d/%m/%Y %H:%M"):
+    if valeur is None:
+        return ""
+    return valeur.replace(tzinfo=timezone.utc).astimezone(ZoneInfo("Europe/Paris")).strftime(format)
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -452,7 +473,26 @@ def equipe_fiche_dossier(dossier_id):
             "date": n.date_creation,
             "auteur": f"{auteur.prenom} {auteur.nom}" if auteur else "Inconnu"
         })
-    demandes = DemandeDocuments.query.filter_by(dossier_id=dossier.id).order_by(DemandeDocuments.date_creation.desc()).all()
+
+    lignes_demandes = DemandeDocuments.query.filter_by(dossier_id=dossier.id).order_by(DemandeDocuments.date_creation.desc()).all()
+    demandes = []
+    for dm in lignes_demandes:
+        if dm.revoquee:
+            etat = "Annulé"
+        elif dm.date_expiration is None:
+            etat = "Sans lien"
+        elif dm.date_expiration < datetime.utcnow():
+            etat = "Expiré"
+        else:
+            etat = "Actif"
+        demandes.append({
+            "id": dm.id,
+            "date": dm.date_creation,
+            "expiration": dm.date_expiration,
+            "pieces": dm.pieces,
+            "etat": etat
+        })
+
     return render_template(
         "equipe_fiche_dossier.html",
         dossier=dossier,
@@ -505,11 +545,8 @@ def equipe_ajouter_note(dossier_id):
         db.session.commit()
 
     return redirect(f"/equipe/dossiers/{dossier.id}")
-@app.template_filter("heure_paris")
-def heure_paris(valeur, format="%d/%m/%Y %H:%M"):
-    if valeur is None:
-        return ""
-    return valeur.replace(tzinfo=timezone.utc).astimezone(ZoneInfo("Europe/Paris")).strftime(format)
+
+
 @app.route("/equipe/dossiers/<int:dossier_id>/demande-documents", methods=["POST"])
 @login_required
 def equipe_demander_documents(dossier_id):
@@ -521,20 +558,145 @@ def equipe_demander_documents(dossier_id):
     choisies = [p for p in request.form.getlist("pieces") if p in libelles]
 
     if choisies:
+        token = secrets.token_urlsafe(32)
+        expiration = datetime.utcnow() + timedelta(hours=DUREE_LIEN_HEURES)
+
         db.session.add(DemandeDocuments(
             dossier_id=dossier.id,
             utilisateur_id=current_user.id,
-            pieces=choisies
+            pieces=choisies,
+            token=token,
+            date_expiration=expiration
         ))
+        noms_pieces = [libelles[p] for p in choisies]
         db.session.add(Historique(
             dossier_id=dossier.id,
             utilisateur_id=current_user.id,
-            action="Documents demandés : " + ", ".join(libelles[p] for p in choisies)
+            action="Documents demandés : " + ", ".join(noms_pieces) + f" (lien valable {DUREE_LIEN_HEURES} h)"
+        ))
+        db.session.commit()
+
+        email_client = (dossier.reponses or {}).get("email")
+        lien = f"{request.host_url}depot/{token}"
+        if email_client:
+            try:
+                envoyer_demande_documents(email_client, lien, noms_pieces, dossier.numero_dossier)
+            except Exception as erreur:
+                print(f"[ERREUR E-MAIL] {erreur}")
+
+    return redirect(f"/equipe/dossiers/{dossier.id}")
+
+
+@app.route("/equipe/dossiers/<int:dossier_id>/demande-documents/<int:demande_id>/revoquer", methods=["POST"])
+@login_required
+def equipe_revoquer_demande(dossier_id, demande_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    dossier = Dossier.query.get_or_404(dossier_id)
+    demande = DemandeDocuments.query.get_or_404(demande_id)
+
+    if demande.dossier_id == dossier.id and not demande.revoquee:
+        demande.revoquee = True
+        db.session.add(Historique(
+            dossier_id=dossier.id,
+            utilisateur_id=current_user.id,
+            action="Lien de dépôt annulé"
         ))
         db.session.commit()
 
     return redirect(f"/equipe/dossiers/{dossier.id}")
 
+def verifier_lien(token):
+    demande = DemandeDocuments.query.filter_by(token=token).first()
+    if (demande is not None
+            and not demande.revoquee
+            and demande.date_expiration is not None
+            and demande.date_expiration > datetime.utcnow()):
+        return demande
+    return None
+
+
+@app.route("/depot/<token>", methods=["GET", "POST"])
+def depot_page(token):
+    demande = verifier_lien(token)
+    if demande is None:
+        return render_template("depot_invalide.html"), 404
+
+    dossier = Dossier.query.get(demande.dossier_id)
+    libelles = dict(PIECES)
+    pieces = [(p, libelles.get(p, p)) for p in demande.pieces]
+
+    if request.method == "POST":
+        acceptes = []
+        refuses = []
+
+        for valeur, libelle in pieces:
+            fichier = request.files.get(f"fichier_{valeur}")
+            if fichier is None or fichier.filename == "":
+                continue
+
+            contenu = fichier.read()
+
+            if len(contenu) == 0:
+                refuses.append((libelle, "Le fichier est vide."))
+                continue
+            if len(contenu) > TAILLE_MAX_FICHIER:
+                refuses.append((libelle, "Le fichier dépasse 10 Mo."))
+                continue
+
+            type_detecte = filetype.guess(contenu)
+            if type_detecte is None or type_detecte.mime not in TYPES_AUTORISES:
+                refuses.append((libelle, "Format non accepté : seuls les PDF, JPG et PNG sont autorisés."))
+                continue
+
+            extension = TYPES_AUTORISES[type_detecte.mime]
+            nom_stocke = f"{uuid.uuid4().hex}.{extension}"
+            empreinte = hashlib.sha256(contenu).hexdigest()
+
+            enregistrer_fichier(contenu, nom_stocke)
+
+            db.session.add(Document(
+                dossier_id=dossier.id,
+                demande_id=demande.id,
+                categorie=valeur,
+                nom_original=fichier.filename[:255],
+                nom_stocke=nom_stocke,
+                type_reel=type_detecte.mime,
+                taille=len(contenu),
+                sha256=empreinte
+            ))
+            acceptes.append(libelle)
+
+        if acceptes:
+            db.session.add(Historique(
+                dossier_id=dossier.id,
+                action="Documents déposés par le client : " + ", ".join(acceptes)
+            ))
+            db.session.commit()
+
+        if not acceptes and not refuses:
+            refuses.append(("", "Aucun fichier n'a été sélectionné."))
+
+        return render_template("depot_resultat.html", acceptes=acceptes, refuses=refuses, token=token)
+
+    return render_template(
+        "depot.html",
+        token=token,
+        numero_dossier=dossier.numero_dossier,
+        pieces=pieces,
+        expiration=demande.date_expiration
+    )
+
+
+@app.errorhandler(413)
+def envoi_trop_gros(erreur):
+    return render_template(
+        "depot_resultat.html",
+        acceptes=[],
+        refuses=[("", "L'envoi est trop volumineux (10 Mo maximum par fichier).")],
+        token=None
+    ), 413
 with app.app_context():
     db.create_all()
 

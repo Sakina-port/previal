@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}PREVIAL — Dépôt de documents{% endblock %}
+
+{% block content %}
+<div class="form-wrap">
+  {% if acceptes %}
+  <h1>Merci, vos documents sont bien reçus</h1>
+  <ul class="depot-liste">
+    {% for nom in acceptes %}
+    <li>✓ {{ nom }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <h1>Aucun document enregistré</h1>
+  {% endif %}
+
+  {% if refuses %}
+  <div class="depot-note depot-erreur">
+    <p><strong>Ces documents n'ont pas été enregistrés :</strong></p>
+    <ul>
+      {% for libelle, raison in refuses %}
+      <li>{% if libelle %}{{ libelle }} : {% endif %}{{ raison }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if token and refuses %}
+  <a href="/depot/{{ token }}" class="btn-primary">Réessayer</a>
+  {% endif %}
+</div>
+{% endblock %}

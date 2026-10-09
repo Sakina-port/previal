@@ -113,3 +113,19 @@ class DemandeDocuments(db.Model):
     revoquee = db.Column(db.Boolean, default=False)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Document(db.Model):
+    __tablename__ = 'documents'
+    id = db.Column(db.Integer, primary_key=True)
+    dossier_id = db.Column(db.Integer, db.ForeignKey('dossiers.id'), nullable= False)
+    demande_id = db.Column(db.Integer, db.ForeignKey('demandes_documents.id'), nullable=True)
+    categorie = db.Column(db.String(50), nullable=False)
+    nom_original = db.Column(db.String(255))
+    nom_stocke = db.Column(db.String(100), unique=True, nullable=False)
+    type_reel = db.Column(db.String(100))
+    taille = db.Column(db.Integer)
+    sha256 = db.Column(db.String(64))
+    source = db.Column(db.String(30), default='client')
+    statut = db.Column(db.String(30), default= 'recu')
+    date_suppression_prevue = db.Column(db.DateTime, nullable=True)
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+

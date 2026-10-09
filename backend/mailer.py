@@ -32,7 +32,7 @@ def notifier_equipe_nouvelle_demande(numero_dossier, besoin, nom, prenom, commen
         print(f"[E-MAIL NON ENVOYÉ] Notification équipe pour {numero_dossier}")
         return False
     texte_commentaire = commentaire if commentaire else "Aucun commentaire laissé"
-    
+
     msg = Message(
         subject=f"PREVIAL - Nouvelle demande {numero_dossier}",
         sender=os.getenv('MAIL_USERNAME'),
@@ -59,5 +59,22 @@ def envoyer_documents(destinataire, produit_nom, dossier_id, chemin_devis, chemi
     with open(chemin_contrat, 'rb') as f:
         msg.attach("contrat.pdf", "application/pdf", f.read())
 
+    mail.send(msg)
+    return True
+
+
+def envoyer_demande_documents(destinataire, lien, pieces, numero_dossier):
+    if not os.getenv('MAIL_USERNAME') or not os.getenv('MAIL_PASSWORD'):
+        print(f"[E-MAIL NON ENVOYÉ] Demande de documents pour {destinataire}. Lien : {lien}")
+        return False
+
+    liste_pieces = "\n".join(f"- {p}" for p in pieces)
+
+    msg = Message(
+        subject=f"PREVIAL - Documents à nous transmettre ({numero_dossier})",
+        sender=os.getenv('MAIL_USERNAME'),
+        recipients=[destinataire],
+        body=f"Bonjour,\n\nPour avancer sur votre dossier {numero_dossier}, merci de nous transmettre les documents suivants :\n{liste_pieces}\n\nVous pouvez les déposer de façon sécurisée avec ce lien, valable 48 heures :\n{lien}\n\nMerci de ne nous envoyer aucun document médical.\n\nCordialement,\nL'équipe PREVIAL"
+    )
     mail.send(msg)
     return True

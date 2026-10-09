@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}PREVIAL — Dépôt de documents{% endblock %}
+
+{% block content %}
+<div class="form-wrap">
+  <h1>Déposez vos documents</h1>
+  <p class="intro">Dossier {{ numero_dossier }} · lien valable jusqu'au {{ expiration|heure_paris }}</p>
+
+  <div class="depot-note">
+    <p>Formats acceptés : PDF, JPG ou PNG. Taille maximale : 10 Mo par fichier.</p>
+    <p><strong>Merci de ne transmettre aucun document médical.</strong></p>
+  </div>
+
+  <form method="POST" action="/depot/{{ token }}" enctype="multipart/form-data">
+    {% for valeur, libelle in pieces %}
+    <div class="form-group">
+      <label>{{ libelle }}</label>
+      <input type="file" name="fichier_{{ valeur }}" accept=".pdf,.jpg,.jpeg,.png">
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn-primary" style="width:100%;">Envoyer mes documents</button>
+  </form>
+</div>
+{% endblock %}

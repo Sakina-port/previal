@@ -57,17 +57,26 @@
       <button type="submit" class="btn-primary">Demander ces pièces</button>
     </form>
 
-    {% if demandes %}
+        {% if demandes %}
     <h3 class="equipe-sous-titre-bloc">Demandes en cours</h3>
     <table class="equipe-table equipe-table-historique">
       <thead>
-        <tr><th>Date</th><th>Pièces demandées</th></tr>
+        <tr><th>Date</th><th>Pièces demandées</th><th>Lien valable jusqu'au</th><th>État</th><th></th></tr>
       </thead>
       <tbody>
         {% for dem in demandes %}
         <tr>
-          <td>{{ dem.date_creation|heure_paris }}</td>
+          <td>{{ dem.date|heure_paris }}</td>
           <td>{% for p in dem.pieces %}{{ libelles_pieces.get(p, p) }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+          <td>{{ dem.expiration|heure_paris if dem.expiration else '—' }}</td>
+          <td>{{ dem.etat }}</td>
+          <td>
+            {% if dem.etat == "Actif" %}
+            <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/demande-documents/{{ dem.id }}/revoquer">
+              <button type="submit" class="equipe-bouton-lien">Annuler le lien</button>
+            </form>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

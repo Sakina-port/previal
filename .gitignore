@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 backend/static/documents/
 .env.production
+backend/stockage/
