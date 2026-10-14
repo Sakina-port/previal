@@ -390,7 +390,6 @@ def equipe_tableau_de_bord():
         derniers_dossiers=derniers_dossiers
     )
 
-
 @app.route("/equipe/dossiers")
 @login_required
 def equipe_dossiers():
@@ -402,6 +401,9 @@ def equipe_dossiers():
     profil_filtre = request.args.get("profil", "")
     tri = request.args.get("tri", "recent")
     q = request.args.get("q", "").strip()
+  
+    du = request.args.get("du", "")
+    au = request.args.get("au", "")
 
     requete = Dossier.query
 
@@ -420,6 +422,21 @@ def equipe_dossiers():
     if profil_filtre:
         requete = requete.filter(Dossier.reponses["profil"].as_string() == profil_filtre)
 
+    
+    if du:
+        try:
+            debut = datetime.strptime(du, "%Y-%m-%d")
+            requete = requete.filter(Dossier.date_creation >= debut)
+        except ValueError:
+            du = ""
+    if au:
+        try:
+           
+            fin = datetime.strptime(au, "%Y-%m-%d") + timedelta(days=1)
+            requete = requete.filter(Dossier.date_creation < fin)
+        except ValueError:
+            au = ""
+
     if tri == "ancien":
         requete = requete.order_by(Dossier.date_creation.asc())
     elif tri == "nom":
@@ -435,6 +452,13 @@ def equipe_dossiers():
 
     dossiers = requete.paginate(page=page, per_page=10, error_out=False)
 
+    ids = [d.id for d in dossiers.items]
+    dernieres = {}
+    if ids:
+        lignes = Historique.query.filter(Historique.dossier_id.in_(ids)).order_by(Historique.date_creation.asc()).all()
+        for h in lignes:
+            dernieres[h.dossier_id] = h
+
     return render_template(
         "equipe_dossiers.html",
         dossiers=dossiers,
@@ -443,9 +467,11 @@ def equipe_dossiers():
         statut_filtre=statut_filtre,
         profil_filtre=profil_filtre,
         tri=tri,
-        q=q
+        q=q,
+        du=du,
+        au=au,
+        dernieres=dernieres
     )
-
 
 @app.route("/equipe/dossiers/<int:dossier_id>")
 @login_required
@@ -495,7 +521,7 @@ def equipe_fiche_dossier(dossier_id):
         })
 
     documents = Document.query.filter_by(dossier_id=dossier.id).order_by(Document.date_creation.desc()).all()
-    print("DOCUMENTS TROUVES POUR LE DOSSIER", dossier.id, ":", len(documents))
+   
 
     return render_template(
         "equipe_fiche_dossier.html",
@@ -724,7 +750,7 @@ def equipe_telecharger_document(document_id):
     return Response(
         contenu,
         mimetype=document.type_reel,
-        headers={"Content-Disposition": "inline; filename" + document.nom_stocke}
+        headers={"Content-Disposition": "inline; filename=" + document.nom_stocke}
         
     )
 
