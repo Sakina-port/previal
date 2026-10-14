@@ -804,3 +804,12 @@ a.equipe-compteur:hover{
 .depot-liste li{
   margin-bottom:8px;
 }
+.equipe-lien-doc{
+  color:var(--ink);
+  font-size:13px;
+  font-weight:600;
+  text-decoration:underline;
+}
+.equipe-lien-doc:hover{
+  color:var(--gold);
+}

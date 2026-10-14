@@ -78,3 +78,17 @@ def envoyer_demande_documents(destinataire, lien, pieces, numero_dossier):
     )
     mail.send(msg)
     return True
+def notifier_equipe_depot(numero_dossier, pieces):
+    adresse_equipe = os.getenv('ADRESSE_EQUIPE')
+    if not os.getenv('MAIL_USERNAME') or not os.getenv('MAIL_PASSWORD') or not adresse_equipe:
+        print(f"[E-MAIL NON ENVOYÉ] Dépot de documents sur {numero_dossier}")
+        return False
+    liste_pieces = "\n".join(f"-{p}" for p in pieces)
+    msg = Message(
+        subject=f"PREVIAL - Documents reçus ({numero_dossier})", 
+        sender=os.getenv('MAIL_USERNAME'),
+        recipients=[adresse_equipe],
+        body=f"Un client a déposé des documents pour le dossier {numero_dossier} :\n{liste_pieces}\n\nConsultez l'espace privé pour les ouvrir . "
+    )
+    mail.send(msg)
+    return True

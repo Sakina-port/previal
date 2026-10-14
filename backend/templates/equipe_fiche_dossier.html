@@ -44,6 +44,7 @@
       <tr><th>Commentaire</th><td>{{ reponses.get('commentaire') or 'Aucun commentaire.' }}</td></tr>
     </table>
   </div>
+
   <div class="fiche-equipe-bloc">
     <h2 class="equipe-titre-section">Documents</h2>
     <p class="equipe-note-info">Aucun document médical ne doit être demandé ni transmis.</p>
@@ -57,7 +58,7 @@
       <button type="submit" class="btn-primary">Demander ces pièces</button>
     </form>
 
-        {% if demandes %}
+    {% if demandes %}
     <h3 class="equipe-sous-titre-bloc">Demandes en cours</h3>
     <table class="equipe-table equipe-table-historique">
       <thead>
@@ -82,7 +83,30 @@
       </tbody>
     </table>
     {% endif %}
+
+        <h3 class="equipe-sous-titre-bloc">Documents reçus</h3>
+    {% if documents %}
+    <table class="equipe-table equipe-table-historique">
+      <thead>
+        <tr><th>Date</th><th>Type de pièce</th><th>Nom du fichier</th><th>Taille</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for d in documents %}
+        <tr>
+          <td>{{ d.date_creation|heure_paris }}</td>
+          <td>{{ libelles_pieces.get(d.categorie, d.categorie) }}</td>
+          <td>{{ d.nom_original }}</td>
+          <td>{{ (d.taille / 1024)|round(0)|int }} Ko</td>
+          <td><a href="/equipe/documents/{{ d.id }}/telecharger" target="_blank" class="equipe-lien-doc">Ouvrir</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="equipe-vide">Aucun document reçu pour l'instant.</p>
+    {% endif %}
   </div>
+
   <div class="fiche-equipe-bloc">
     <h2 class="equipe-titre-section">Notes internes</h2>
     <p class="equipe-note-info">Ces notes sont visibles uniquement par l'équipe PREVIAL.</p>

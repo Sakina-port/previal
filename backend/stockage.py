@@ -8,3 +8,7 @@ def enregistrer_fichier(contenu, nom_stocke):
     chemin = os.path.join(DOSSIER_STOCKAGE, nom_stocke)
     with open (chemin, "wb") as fichier:
         fichier.write(contenu)
+def lire_fichier(nom_stocke):
+    chemin = os.path.join(DOSSIER_STOCKAGE, os.path.basename(nom_stocke))
+    with open(chemin, "rb") as fichier:
+        return fichier.read()

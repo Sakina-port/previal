@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, abort
+from flask import Flask, render_template, request, redirect, abort, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
@@ -13,17 +13,17 @@ from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from weasyprint import HTML
 from sqlalchemy import or_
-from models import db,   Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document
+from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document
 from moteur_devis import obtenir_devis
-from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents
-from stockage import enregistrer_fichier 
+from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents, notifier_equipe_depot
+from stockage import enregistrer_fichier, lire_fichier
 
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change-moi-plus-tard')
-app.config['MAX_CONTENT_LENGTH'] = 60*1024*1024
+app.config['MAX_CONTENT_LENGTH'] = 60 * 1024 * 1024
 AFFICHER_FONCTIONNALITES_MASQUEES = os.getenv('AFFICHER_FONCTIONNALITES_MASQUEES', 'False') == 'True'
 db.init_app(app)
 configurer_mail(app)
@@ -57,11 +57,12 @@ PIECES = [
 DUREE_LIEN_HEURES = 48
 
 TYPES_AUTORISES = {
-    "application/pdf":"pdf",
+    "application/pdf": "pdf",
     "image/jpeg": "jpg",
-    "image/png" : "png",
+    "image/png": "png",
 }
-TAILLE_MAX_FICHIER = 10*1024*1024
+TAILLE_MAX_FICHIER = 10 * 1024 * 1024
+
 
 @app.template_filter("heure_paris")
 def heure_paris(valeur, format="%d/%m/%Y %H:%M"):
@@ -493,6 +494,9 @@ def equipe_fiche_dossier(dossier_id):
             "etat": etat
         })
 
+    documents = Document.query.filter_by(dossier_id=dossier.id).order_by(Document.date_creation.desc()).all()
+    print("DOCUMENTS TROUVES POUR LE DOSSIER", dossier.id, ":", len(documents))
+
     return render_template(
         "equipe_fiche_dossier.html",
         dossier=dossier,
@@ -503,7 +507,8 @@ def equipe_fiche_dossier(dossier_id):
         notes=notes,
         demandes=demandes,
         pieces=PIECES,
-        libelles_pieces=dict(PIECES)
+        libelles_pieces=dict(PIECES),
+        documents=documents
     )
 
 
@@ -607,6 +612,7 @@ def equipe_revoquer_demande(dossier_id, demande_id):
 
     return redirect(f"/equipe/dossiers/{dossier.id}")
 
+
 def verifier_lien(token):
     demande = DemandeDocuments.query.filter_by(token=token).first()
     if (demande is not None
@@ -674,6 +680,10 @@ def depot_page(token):
                 action="Documents déposés par le client : " + ", ".join(acceptes)
             ))
             db.session.commit()
+            try:
+                notifier_equipe_depot(dossier.numero_dossier, acceptes)
+            except Exception as erreur:
+                print(f"[ERREUR E-MAIL]{erreur}")
 
         if not acceptes and not refuses:
             refuses.append(("", "Aucun fichier n'a été sélectionné."))
@@ -697,6 +707,27 @@ def envoi_trop_gros(erreur):
         refuses=[("", "L'envoi est trop volumineux (10 Mo maximum par fichier).")],
         token=None
     ), 413
+
+@app.route("/equipe/documents/<int:document_id>/telecharger")
+@login_required
+def equipe_telecharger_document(document_id):
+    if current_user.role != "admin":
+        abort(404)
+    document = Document.query.get_or_404(document_id)
+    contenu = lire_fichier(document.nom_stocke)
+    db.session.add(Historique(
+        dossier_id=document.dossier_id,
+        utilisateur_id=current_user.id,
+        action="Document téléchargé : " +document.nom_original
+    ))
+    db.session.commit()
+    return Response(
+        contenu,
+        mimetype=document.type_reel,
+        headers={"Content-Disposition": "inline; filename" + document.nom_stocke}
+        
+    )
+
 with app.app_context():
     db.create_all()
 
