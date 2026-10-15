@@ -13,7 +13,7 @@ from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from weasyprint import HTML
 from sqlalchemy import or_
-from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document
+from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document, Rappel
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents, notifier_equipe_depot
 from stockage import enregistrer_fichier, lire_fichier
@@ -521,7 +521,7 @@ def equipe_fiche_dossier(dossier_id):
         })
 
     documents = Document.query.filter_by(dossier_id=dossier.id).order_by(Document.date_creation.desc()).all()
-   
+    rappels = Rappel.query.filter_by(dossier_id=dossier.id).order_by(Rappel.fait.asc(), Rappel.date_rappel.asc()).all()
 
     return render_template(
         "equipe_fiche_dossier.html",
@@ -534,7 +534,8 @@ def equipe_fiche_dossier(dossier_id):
         demandes=demandes,
         pieces=PIECES,
         libelles_pieces=dict(PIECES),
-        documents=documents
+        documents=documents,
+        rappels=rappels
     )
 
 
@@ -577,7 +578,58 @@ def equipe_ajouter_note(dossier_id):
 
     return redirect(f"/equipe/dossiers/{dossier.id}")
 
+@app.route("/equipe/dossiers/<int:dossier_id>/rappels", methods=["POST"])
+@login_required
+def equipe_ajouter_rappel(dossier_id):
+    if current_user.role != "admin":
+        abort(404)
 
+    dossier = Dossier.query.get_or_404(dossier_id)
+    contenu = request.form.get("contenu", "").strip()
+    date_texte = request.form.get("date_rappel", "")
+
+    if contenu and date_texte:
+        try:
+            date_locale = datetime.strptime(date_texte, "%Y-%m-%dT%H:%M")
+        except ValueError:
+            return redirect(f"/equipe/dossiers/{dossier.id}")
+
+        date_utc = date_locale.replace(tzinfo=ZoneInfo("Europe/Paris")).astimezone(timezone.utc).replace(tzinfo=None)
+
+        db.session.add(Rappel(
+            dossier_id=dossier.id,
+            utilisateur_id=current_user.id,
+            date_rappel=date_utc,
+            contenu=contenu[:255]
+        ))
+        db.session.add(Historique(
+            dossier_id=dossier.id,
+            utilisateur_id=current_user.id,
+            action="Rappel ajouté : " + contenu[:100]
+        ))
+        db.session.commit()
+
+    return redirect(f"/equipe/dossiers/{dossier.id}")
+@app.route("/equipe/dossiers/<int:dossier_id>/rappels/<int:rappel_id>/fait", methods=["POST"])
+@login_required
+def equipe_rappel_fait(dossier_id, rappel_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    dossier = Dossier.query.get_or_404(dossier_id)
+    rappel = Rappel.query.get_or_404(rappel_id)
+
+    if rappel.dossier_id == dossier.id and not rappel.fait:
+        rappel.fait = True
+        rappel.date_fait = datetime.utcnow()
+        db.session.add(Historique(
+            dossier_id=dossier.id,
+            utilisateur_id=current_user.id,
+            action="Rappel terminé : " + rappel.contenu[:100]
+        ))
+        db.session.commit()
+
+    return redirect(f"/equipe/dossiers/{dossier.id}")
 @app.route("/equipe/dossiers/<int:dossier_id>/demande-documents", methods=["POST"])
 @login_required
 def equipe_demander_documents(dossier_id):
@@ -744,7 +796,7 @@ def equipe_telecharger_document(document_id):
     db.session.add(Historique(
         dossier_id=document.dossier_id,
         utilisateur_id=current_user.id,
-        action="Document téléchargé : " +document.nom_origigitnal
+        action="Document téléchargé : " + document.nom_original
     ))
     db.session.commit()
     return Response(

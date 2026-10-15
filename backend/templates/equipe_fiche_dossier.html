@@ -130,6 +130,43 @@
     {% endif %}
   </div>
 
+   <div class="fiche-equipe-bloc">
+    <h2 class="equipe-titre-section">Rappels</h2>
+    <p class="equipe-note-info">Pour ne rien oublier : indique quand agir et ce qu'il faut faire.</p>
+
+    <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/rappels" class="equipe-filtres">
+      <input type="datetime-local" name="date_rappel" required>
+      <input type="text" name="contenu" maxlength="255" placeholder="Ex. : rappeler pour la pièce d'identité" required>
+      <button type="submit" class="btn-primary">Ajouter le rappel</button>
+    </form>
+
+    {% if rappels %}
+    <table class="equipe-table equipe-table-historique">
+      <thead>
+        <tr><th>Quand</th><th>À faire</th><th>État</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rappels %}
+        <tr>
+          <td>{{ r.date_rappel|heure_paris }}</td>
+          <td>{% if r.fait %}<s>{{ r.contenu }}</s>{% else %}{{ r.contenu }}{% endif %}</td>
+          <td>
+            {% if r.fait %}
+              Fait le {{ r.date_fait|heure_paris }}
+            {% else %}
+            <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/rappels/{{ r.id }}/fait">
+              <button type="submit" class="equipe-bouton-lien">Marquer comme fait</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="equipe-vide">Aucun rappel pour ce dossier.</p>
+    {% endif %}
+  </div>
   <div class="fiche-equipe-bloc">
     <h2 class="equipe-titre-section">Historique</h2>
     {% if historique %}

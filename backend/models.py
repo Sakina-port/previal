@@ -129,3 +129,13 @@ class Document(db.Model):
     date_suppression_prevue = db.Column(db.DateTime, nullable=True)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Rappel(db.Model):
+    __tablename__ = 'rappels'
+    id = db.Column(db.Integer, primary_key=True)
+    dossier_id = db.Column(db.Integer, db.ForeignKey('dossiers.id'), nullable=False)
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=False)
+    date_rappel = db.Column(db.DateTime, nullable=False)
+    contenu = db.Column(db.String(255), nullable=False)
+    fait = db.Column(db.Boolean, default=False)
+    date_fait = db.Column(db.DateTime, nullable=True)
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
