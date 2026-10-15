@@ -29,6 +29,13 @@
       {% endfor %}
     </select>
 
+    <select name="produit">
+      <option value="">Tous les produits</option>
+      {% for b in ["Santé", "Prévoyance", "Santé + Prévoyance", "Autre"] %}
+      <option value="{{ b }}" {% if b == produit_filtre %}selected{% endif %}>{{ b }}</option>
+      {% endfor %}
+    </select>
+
     <select name="tri">
       <option value="recent" {% if tri == "recent" %}selected{% endif %}>Plus récents d'abord</option>
       <option value="ancien" {% if tri == "ancien" %}selected{% endif %}>Plus anciens d'abord</option>
@@ -37,6 +44,14 @@
       <option value="email" {% if tri == "email" %}selected{% endif %}>E-mail (A à Z)</option>
       <option value="statut" {% if tri == "statut" %}selected{% endif %}>Statut</option>
     </select>
+
+    <label class="equipe-date">Du
+      <input type="date" name="du" value="{{ du }}">
+    </label>
+
+    <label class="equipe-date">Au
+      <input type="date" name="au" value="{{ au }}">
+    </label>
 
     <button type="submit" class="btn-primary">Rechercher</button>
     <a href="/equipe/dossiers" class="equipe-reset">Réinitialiser</a>
@@ -54,11 +69,13 @@
         <th>Besoin</th>
         <th>Statut</th>
         <th>Date</th>
+        <th>Dernière action</th>
       </tr>
     </thead>
     <tbody>
       {% for d in dossiers.items %}
       {% set r = d.reponses or {} %}
+      {% set derniere = dernieres.get(d.id) %}
       <tr>
         <td><a href="/equipe/dossiers/{{ d.id }}" class="equipe-lien-dossier">{{ d.numero_dossier }}</a></td>
         <td>{{ r.get('nom', '') }}</td>
@@ -68,6 +85,14 @@
         <td>{{ r.get('besoin', '') }}</td>
         <td>{{ libelles.get(d.statut, d.statut) }}</td>
         <td>{{ d.date_creation|heure_paris("%d/%m/%Y") }}</td>
+        <td>
+          {% if derniere %}
+            {{ derniere.action }}<br>
+            <small>{{ derniere.date_creation|heure_paris }}</small>
+          {% else %}
+            —
+          {% endif %}
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -75,11 +100,11 @@
 
   <div class="equipe-pagination">
     {% if dossiers.has_prev %}
-    <a href="/equipe/dossiers?page={{ dossiers.prev_num }}&q={{ q }}&statut={{ statut_filtre }}&profil={{ profil_filtre }}&tri={{ tri }}">← Précédent</a>
+    <a href="/equipe/dossiers?page={{ dossiers.prev_num }}&q={{ q }}&statut={{ statut_filtre }}&profil={{ profil_filtre }}&produit={{ produit_filtre }}&tri={{ tri }}&du={{ du }}&au={{ au }}">← Précédent</a>
     {% endif %}
     <span>Page {{ dossiers.page }} sur {{ dossiers.pages }}</span>
     {% if dossiers.has_next %}
-    <a href="/equipe/dossiers?page={{ dossiers.next_num }}&q={{ q }}&statut={{ statut_filtre }}&profil={{ profil_filtre }}&tri={{ tri }}">Suivant →</a>
+    <a href="/equipe/dossiers?page={{ dossiers.next_num }}&q={{ q }}&statut={{ statut_filtre }}&profil={{ profil_filtre }}&produit={{ produit_filtre }}&tri={{ tri }}&du={{ du }}&au={{ au }}">Suivant →</a>
     {% endif %}
   </div>
   {% else %}

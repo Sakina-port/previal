@@ -813,3 +813,9 @@ a.equipe-compteur:hover{
 .equipe-lien-doc:hover{
   color:var(--gold);
 }
+.equipe-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+}

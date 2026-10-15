@@ -399,9 +399,9 @@ def equipe_dossiers():
     page = request.args.get("page", 1, type=int)
     statut_filtre = request.args.get("statut", "")
     profil_filtre = request.args.get("profil", "")
+    produit_filtre = request.args.get("produit", "")
     tri = request.args.get("tri", "recent")
     q = request.args.get("q", "").strip()
-  
     du = request.args.get("du", "")
     au = request.args.get("au", "")
 
@@ -421,8 +421,9 @@ def equipe_dossiers():
         requete = requete.filter(Dossier.statut == statut_filtre)
     if profil_filtre:
         requete = requete.filter(Dossier.reponses["profil"].as_string() == profil_filtre)
+    if produit_filtre:
+        requete = requete.filter(Dossier.reponses["besoin"].as_string() == produit_filtre)
 
-    
     if du:
         try:
             debut = datetime.strptime(du, "%Y-%m-%d")
@@ -431,7 +432,6 @@ def equipe_dossiers():
             du = ""
     if au:
         try:
-           
             fin = datetime.strptime(au, "%Y-%m-%d") + timedelta(days=1)
             requete = requete.filter(Dossier.date_creation < fin)
         except ValueError:
@@ -466,13 +466,13 @@ def equipe_dossiers():
         libelles=dict(STATUTS),
         statut_filtre=statut_filtre,
         profil_filtre=profil_filtre,
+        produit_filtre=produit_filtre,
         tri=tri,
         q=q,
         du=du,
         au=au,
         dernieres=dernieres
     )
-
 @app.route("/equipe/dossiers/<int:dossier_id>")
 @login_required
 def equipe_fiche_dossier(dossier_id):
@@ -744,7 +744,7 @@ def equipe_telecharger_document(document_id):
     db.session.add(Historique(
         dossier_id=document.dossier_id,
         utilisateur_id=current_user.id,
-        action="Document téléchargé : " +document.nom_original
+        action="Document téléchargé : " +document.nom_origigitnal
     ))
     db.session.commit()
     return Response(
