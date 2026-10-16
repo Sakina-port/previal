@@ -383,11 +383,28 @@ def equipe_tableau_de_bord():
         compteurs.append({"valeur": valeur, "libelle": libelle, "nombre": nombre})
 
     derniers_dossiers = Dossier.query.order_by(Dossier.date_creation.desc()).limit(10).all()
+    maintenant = datetime.utcnow()
+    demain_paris = (datetime.now(ZoneInfo("Europe/Paris")) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    fin_aujourdhui = demain_paris.astimezone(timezone.utc).replace(tzinfo=None)
+
+    rappels_a_traiter = Rappel.query.filter(
+        Rappel.fait.is_(False),
+        Rappel.date_rappel < fin_aujourdhui
+    ).order_by(Rappel.date_rappel.asc()).all()
+
+    a_faire = []
+    for r in rappels_a_traiter:
+        a_faire.append({
+            "rappel": r,
+            "dossier": Dossier.query.get(r.dossier_id),
+            "en_retard": r.date_rappel < maintenant
+        })
 
     return render_template(
         "equipe_tableau_de_bord.html",
         compteurs=compteurs,
-        derniers_dossiers=derniers_dossiers
+        derniers_dossiers=derniers_dossiers,
+        a_faire=a_faire
     )
 
 @app.route("/equipe/dossiers")

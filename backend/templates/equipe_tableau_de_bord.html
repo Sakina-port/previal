@@ -21,7 +21,38 @@
     {% endfor %}
   </div>
 
+    <h2 class="equipe-titre-section">À faire aujourd'hui</h2>
+  {% if a_faire %}
+  <table class="equipe-table">
+    <thead>
+      <tr>
+        <th>Quand</th>
+        <th>À faire</th>
+        <th>Dossier</th>
+        <th>Nom</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in a_faire %}
+      {% set dos = item.dossier %}
+      <tr>
+        <td>
+          {% if item.en_retard %}<strong>En retard</strong><br>{% endif %}
+          {{ item.rappel.date_rappel|heure_paris }}
+        </td>
+        <td>{{ item.rappel.contenu }}</td>
+        <td><a href="/equipe/dossiers/{{ dos.id }}" class="equipe-lien-dossier">{{ dos.numero_dossier }}</a></td>
+        <td>{{ (dos.reponses or {}).get('prenom', '') }} {{ (dos.reponses or {}).get('nom', '') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="equipe-vide">Rien à faire pour aujourd'hui.</p>
+  {% endif %}
+
   <h2 class="equipe-titre-section">Dernières demandes</h2>
+ 
 <a href="/equipe/dossiers" class="btn-primary" style="margin-bottom:16px;">Voir toutes les demandes</a>
   {% if derniers_dossiers %}
   <table class="equipe-table">
