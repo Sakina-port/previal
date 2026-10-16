@@ -21,7 +21,11 @@
     {% endfor %}
   </div>
 
-    <h2 class="equipe-titre-section">À faire aujourd'hui</h2>
+    {% set nb_retard = a_faire|selectattr('en_retard')|list|length %}
+  <h2 class="equipe-titre-section">
+    À faire aujourd'hui ({{ a_faire|length }})
+    {% if nb_retard %}<span style="color:#b42318;font-size:0.9rem;"> · dont {{ nb_retard }} en retard</span>{% endif %}
+  </h2>
   {% if a_faire %}
   <table class="equipe-table">
     <thead>
