@@ -9,6 +9,8 @@ import base64
 import uuid
 import hashlib
 import filetype
+import csv
+import io
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from weasyprint import HTML
@@ -511,7 +513,87 @@ def equipe_dossiers():
         dernieres=dernieres
     )
 
+def proteger_csv(valeur):
+    texte = "" if valeur is None else str(valeur)
+    if texte[:1] in ("=", "+", "-", "@"):
+        texte = "'" + texte
+    return texte
 
+
+@app.route("/equipe/dossiers/export.csv")
+@login_required
+def equipe_export_csv():
+    if current_user.role != "admin":
+        abort(404)
+
+    statut_filtre = request.args.get("statut", "")
+    profil_filtre = request.args.get("profil", "")
+    produit_filtre = request.args.get("produit", "")
+    partenaire_filtre = request.args.get("partenaire", "")
+    q = request.args.get("q", "").strip()
+    du = request.args.get("du", "")
+    au = request.args.get("au", "")
+
+    requete = Dossier.query
+
+    for mot in q.split():
+        motif = f"%{mot}%"
+        requete = requete.filter(or_(
+            Dossier.numero_dossier.like(motif),
+            Dossier.reponses["nom"].as_string().collate("utf8mb4_general_ci").like(motif),
+            Dossier.reponses["prenom"].as_string().collate("utf8mb4_general_ci").like(motif),
+            Dossier.reponses["email"].as_string().collate("utf8mb4_general_ci").like(motif),
+            Dossier.reponses["telephone"].as_string().collate("utf8mb4_general_ci").like(motif),
+        ))
+
+    if statut_filtre:
+        requete = requete.filter(Dossier.statut == statut_filtre)
+    if profil_filtre:
+        requete = requete.filter(Dossier.reponses["profil"].as_string() == profil_filtre)
+    if produit_filtre:
+        requete = requete.filter(Dossier.reponses["besoin"].as_string() == produit_filtre)
+    if partenaire_filtre in PARTENAIRES:
+        requete = requete.filter(exists().where(and_(
+            EtudePartenaire.dossier_id == Dossier.id,
+            EtudePartenaire.partenaire == partenaire_filtre
+        )))
+    if du:
+        try:
+            requete = requete.filter(Dossier.date_creation >= datetime.strptime(du, "%Y-%m-%d"))
+        except ValueError:
+            pass
+    if au:
+        try:
+            requete = requete.filter(Dossier.date_creation < datetime.strptime(au, "%Y-%m-%d") + timedelta(days=1))
+        except ValueError:
+            pass
+
+    dossiers = requete.order_by(Dossier.date_creation.desc()).all()
+    libelles = dict(STATUTS)
+
+    sortie = io.StringIO()
+    ecrivain = csv.writer(sortie, delimiter=";")
+    ecrivain.writerow(["Dossier", "Nom", "Prénom", "Téléphone", "E-mail", "Besoin", "Statut", "Date de création"])
+    for d in dossiers:
+        r = d.reponses or {}
+        ecrivain.writerow([
+            proteger_csv(d.numero_dossier),
+            proteger_csv(r.get("nom", "")),
+            proteger_csv(r.get("prenom", "")),
+            proteger_csv(r.get("telephone", "")),
+            proteger_csv(r.get("email", "")),
+            proteger_csv(r.get("besoin", "")),
+            proteger_csv(libelles.get(d.statut, d.statut)),
+            heure_paris(d.date_creation, "%d/%m/%Y"),
+        ])
+
+    contenu = "\ufeff" + sortie.getvalue()
+    nom_fichier = "dossiers_" + date.today().strftime("%Y-%m-%d") + ".csv"
+    return Response(
+        contenu,
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=" + nom_fichier}
+    )
 @app.route("/equipe/dossiers/<int:dossier_id>")
 @login_required
 def equipe_fiche_dossier(dossier_id):

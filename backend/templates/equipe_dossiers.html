@@ -55,6 +55,7 @@
 
     <button type="submit" class="btn-primary">Rechercher</button>
     <a href="/equipe/dossiers" class="equipe-reset">Réinitialiser</a>
+    <a href="/equipe/dossiers/export.csv?q={{ q|urlencode }}&statut={{ statut_filtre|urlencode }}&profil={{ profil_filtre|urlencode }}&produit={{ produit_filtre|urlencode }}&partenaire={{ partenaire_filtre|urlencode }}&du={{ du|urlencode }}&au={{ au|urlencode }}" class="equipe-reset">Exporter en CSV</a>
   </form>
 
   {% if dossiers.items %}
