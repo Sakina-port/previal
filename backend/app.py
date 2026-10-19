@@ -391,7 +391,7 @@ def equipe_tableau_de_bord():
 
     compteurs = []
     for valeur, libelle in STATUTS:
-        nombre = Dossier.query.filter_by(statut=valeur).count()
+        nombre = Dossier.query.filter_by(statut=valeur, archive=False).count()
         compteurs.append({"valeur": valeur, "libelle": libelle, "nombre": nombre})
 
     derniers_dossiers = Dossier.query.order_by(Dossier.date_creation.desc()).limit(10).all()
@@ -432,6 +432,7 @@ def equipe_dossiers():
     profil_filtre = request.args.get("profil", "")
     produit_filtre = request.args.get("produit", "")
     partenaire_filtre = request.args.get("partenaire", "")
+    archives = request.args.get("archives", "")
     tri = request.args.get("tri", "recent")
     q = request.args.get("q", "").strip()
     du = request.args.get("du", "")
@@ -461,6 +462,10 @@ def equipe_dossiers():
             EtudePartenaire.partenaire == partenaire_filtre
         )))
 
+    if archives == "1":
+        requete = requete.filter(Dossier.archive.is_(True))
+    else:
+        requete = requete.filter(Dossier.archive.is_(False))
     if du:
         try:
             debut = datetime.strptime(du, "%Y-%m-%d")
@@ -506,6 +511,7 @@ def equipe_dossiers():
         produit_filtre=produit_filtre,
         partenaire_filtre=partenaire_filtre,
         partenaires=PARTENAIRES,
+        archives=archives,
         tri=tri,
         q=q,
         du=du,
@@ -684,6 +690,32 @@ def equipe_changer_statut(dossier_id):
             action=f"Statut changé de « {libelles.get(ancien_statut, ancien_statut)} » à « {libelles[nouveau_statut]} »"
         ))
         db.session.commit()
+
+    return redirect(f"/equipe/dossiers/{dossier.id}")
+@app.route("/equipe/dossiers/<int:dossier_id>/archivage", methods=["POST"])
+@login_required
+def equipe_archiver_dossier(dossier_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    dossier = Dossier.query.get_or_404(dossier_id)
+    action = request.form.get("action", "")
+
+    if action == "archiver" and not dossier.archive:
+        dossier.archive = True
+        texte = "Dossier archivé"
+    elif action == "desarchiver" and dossier.archive:
+        dossier.archive = False
+        texte = "Dossier désarchivé"
+    else:
+        return redirect(f"/equipe/dossiers/{dossier.id}")
+
+    db.session.add(Historique(
+        dossier_id=dossier.id,
+        utilisateur_id=current_user.id,
+        action=texte
+    ))
+    db.session.commit()
 
     return redirect(f"/equipe/dossiers/{dossier.id}")
 

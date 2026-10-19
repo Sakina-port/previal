@@ -60,6 +60,16 @@
       </select>
       <button type="submit" class="btn-primary">Enregistrer le statut</button>
     </form>
+        <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/archivage" style="margin-top:12px;">
+      {% if dossier.archive %}
+      <input type="hidden" name="action" value="desarchiver">
+      <p class="equipe-note-info">Ce dossier est archivé.</p>
+      <button type="submit" class="btn-primary">Désarchiver ce dossier</button>
+      {% else %}
+      <input type="hidden" name="action" value="archiver">
+      <button type="submit" class="btn-primary">Archiver ce dossier</button>
+      {% endif %}
+    </form>
   </div>
 
   <div class="fiche-equipe-bloc">

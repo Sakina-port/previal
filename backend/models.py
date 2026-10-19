@@ -36,6 +36,7 @@ class Dossier(db.Model):
     statut = db.Column(db.String(50), default='nouveau')
     source = db.Column(db.String(50), default='interne')
     reponses = db.Column(db.JSON)
+    archive = db.Column(db.Boolean, nullable=False, default=False)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
 
 

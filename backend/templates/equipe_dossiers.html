@@ -36,6 +36,18 @@
       {% endfor %}
     </select>
 
+    <select name="partenaire">
+      <option value="">Tous les partenaires</option>
+      {% for p in partenaires %}
+      <option value="{{ p }}" {% if p == partenaire_filtre %}selected{% endif %}>{{ p }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="archives">
+      <option value="" {% if archives != "1" %}selected{% endif %}>Dossiers en cours</option>
+      <option value="1" {% if archives == "1" %}selected{% endif %}>Dossiers archivés</option>
+    </select>
+
     <select name="tri">
       <option value="recent" {% if tri == "recent" %}selected{% endif %}>Plus récents d'abord</option>
       <option value="ancien" {% if tri == "ancien" %}selected{% endif %}>Plus anciens d'abord</option>
@@ -101,11 +113,11 @@
 
   <div class="equipe-pagination">
     {% if dossiers.has_prev %}
-    <a href="/equipe/dossiers?page={{ dossiers.prev_num }}&q={{ q }}&statut={{ statut_filtre }}&profil={{ profil_filtre }}&produit={{ produit_filtre }}&tri={{ tri }}&du={{ du }}&au={{ au }}">← Précédent</a>
+    <a href="/equipe/dossiers?page={{ dossiers.prev_num }}&q={{ q|urlencode }}&statut={{ statut_filtre|urlencode }}&profil={{ profil_filtre|urlencode }}&produit={{ produit_filtre|urlencode }}&partenaire={{ partenaire_filtre|urlencode }}&archives={{ archives|urlencode }}&tri={{ tri|urlencode }}&du={{ du|urlencode }}&au={{ au|urlencode }}">← Précédent</a>
     {% endif %}
     <span>Page {{ dossiers.page }} sur {{ dossiers.pages }}</span>
     {% if dossiers.has_next %}
-    <a href="/equipe/dossiers?page={{ dossiers.next_num }}&q={{ q }}&statut={{ statut_filtre }}&profil={{ profil_filtre }}&produit={{ produit_filtre }}&tri={{ tri }}&du={{ du }}&au={{ au }}">Suivant →</a>
+    <a href="/equipe/dossiers?page={{ dossiers.next_num }}&q={{ q|urlencode }}&statut={{ statut_filtre|urlencode }}&profil={{ profil_filtre|urlencode }}&produit={{ produit_filtre|urlencode }}&partenaire={{ partenaire_filtre|urlencode }}&archives={{ archives|urlencode }}&tri={{ tri|urlencode }}&du={{ du|urlencode }}&au={{ au|urlencode }}">Suivant →</a>
     {% endif %}
   </div>
   {% else %}
