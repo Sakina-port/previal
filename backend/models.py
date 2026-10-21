@@ -38,6 +38,11 @@ class Dossier(db.Model):
     reponses = db.Column(db.JSON)
     archive = db.Column(db.Boolean, nullable=False, default=False)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        db.Index('idx_dossiers_archive_date', 'archive', 'date_creation'),
+        db.Index('idx_dossiers_statut_archive', 'statut', 'archive'),
+    )
 
 
 class Devis(db.Model):
@@ -140,6 +145,10 @@ class Rappel(db.Model):
     fait = db.Column(db.Boolean, default=False)
     date_fait = db.Column(db.DateTime, nullable=True)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        db.Index('idx_rappels_fait_date', 'fait', 'date_rappel'),
+    )
 
 class EtudePartenaire(db.Model):
     __tablename__ = 'etudes_partenaires'

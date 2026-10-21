@@ -11,45 +11,7 @@
     </div>
     <a href="/equipe/dossiers" class="btn-primary equipe-deconnexion">Retour à la liste</a>
   </div>
-    <div class="fiche-equipe-bloc">
-    <h2 class="equipe-titre-section">Partenaires / devis</h2>
-    <p class="equipe-note-info">Note les partenaires interrogés pour ce dossier et où en est l'étude.</p>
-
-    <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/partenaires" class="equipe-filtres">
-      <select name="partenaire" required>
-        {% for p in partenaires %}
-        <option value="{{ p }}">{{ p }}</option>
-        {% endfor %}
-      </select>
-      <select name="etat" required>
-        {% for valeur, libelle in etats_etude %}
-        <option value="{{ valeur }}">{{ libelle }}</option>
-        {% endfor %}
-      </select>
-      <input type="text" name="commentaire" maxlength="255" placeholder="Commentaire (facultatif)">
-      <button type="submit" class="btn-primary">Ajouter</button>
-    </form>
-
-    {% if etudes %}
-    <table class="equipe-table equipe-table-historique">
-      <thead>
-        <tr><th>Partenaire</th><th>État</th><th>Commentaire</th><th>Mis à jour</th></tr>
-      </thead>
-      <tbody>
-        {% for e in etudes %}
-        <tr>
-          <td>{{ e.partenaire }}</td>
-          <td>{{ libelles_etats.get(e.etat, e.etat) }}</td>
-          <td>{{ e.commentaire or '—' }}</td>
-          <td>{{ e.date_maj|heure_paris }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p class="equipe-vide">Aucun partenaire interrogé pour ce dossier.</p>
-    {% endif %}
-  </div>
+ {% include "_recherche_equipe.html" %}
   <div class="fiche-equipe-bloc">
     <h2 class="equipe-titre-section">Statut du dossier</h2>
     <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/statut" class="equipe-filtres">
@@ -60,7 +22,8 @@
       </select>
       <button type="submit" class="btn-primary">Enregistrer le statut</button>
     </form>
-        <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/archivage" style="margin-top:12px;">
+
+    <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/archivage" style="margin-top:12px;">
       {% if dossier.archive %}
       <input type="hidden" name="action" value="desarchiver">
       <p class="equipe-note-info">Ce dossier est archivé.</p>
@@ -92,6 +55,36 @@
       <tr><th>Commentaire</th><td>{{ reponses.get('commentaire') or 'Aucun commentaire.' }}</td></tr>
     </table>
   </div>
+
+  {% if memes_personnes %}
+  <div class="fiche-equipe-bloc">
+    <h2 class="equipe-titre-section">Autres dossiers avec le même e-mail ou téléphone ({{ memes_personnes|length }})</h2>
+    <p class="equipe-note-info">À vérifier : mêmes coordonnées ne veut pas toujours dire même personne.</p>
+    <div style="max-height: 260px; overflow-y: auto;">
+      <table class="equipe-table equipe-table-historique">
+        <thead>
+          <tr><th>Dossier</th><th>Nom</th><th>Besoin</th><th>Statut</th><th>Date</th><th>Même</th></tr>
+        </thead>
+        <tbody>
+          {% for m in memes_personnes %}
+          {% set rm = m.reponses or {} %}
+          <tr>
+            <td><a href="/equipe/dossiers/{{ m.id }}" class="equipe-lien-dossier">{{ m.numero_dossier }}</a>{% if m.archive %} (archivé){% endif %}</td>
+            <td>{{ rm.get('prenom', '') }} {{ rm.get('nom', '') }}</td>
+            <td>{{ rm.get('besoin', '') }}</td>
+            <td>{{ libelles.get(m.statut, m.statut) }}</td>
+            <td>{{ m.date_creation|heure_paris("%d/%m/%Y") }}</td>
+            <td>
+              {% if rm.get('email') and (rm.get('email')|lower) == ((reponses.get('email') or '')|lower) %}E-mail{% endif %}
+              {% if rm.get('telephone') and rm.get('telephone') == reponses.get('telephone') %}Téléphone{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
 
   <div class="fiche-equipe-bloc">
     <h2 class="equipe-titre-section">Documents</h2>
@@ -132,7 +125,7 @@
     </table>
     {% endif %}
 
-        <h3 class="equipe-sous-titre-bloc">Documents reçus</h3>
+    <h3 class="equipe-sous-titre-bloc">Documents reçus</h3>
     {% if documents %}
     <table class="equipe-table equipe-table-historique">
       <thead>
@@ -178,7 +171,7 @@
     {% endif %}
   </div>
 
-   <div class="fiche-equipe-bloc">
+  <div class="fiche-equipe-bloc">
     <h2 class="equipe-titre-section">Rappels</h2>
     <p class="equipe-note-info">Pour ne rien oublier : indique quand agir et ce qu'il faut faire.</p>
 
@@ -215,27 +208,70 @@
     <p class="equipe-vide">Aucun rappel pour ce dossier.</p>
     {% endif %}
   </div>
+
   <div class="fiche-equipe-bloc">
-    <h2 class="equipe-titre-section">Historique</h2>
-    {% if historique %}
+    <h2 class="equipe-titre-section">Partenaires / devis</h2>
+    <p class="equipe-note-info">Note les partenaires interrogés pour ce dossier et où en est l'étude.</p>
+
+    <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/partenaires" class="equipe-filtres">
+      <select name="partenaire" required>
+        {% for p in partenaires %}
+        <option value="{{ p }}">{{ p }}</option>
+        {% endfor %}
+      </select>
+      <select name="etat" required>
+        {% for valeur, libelle in etats_etude %}
+        <option value="{{ valeur }}">{{ libelle }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="commentaire" maxlength="255" placeholder="Commentaire (facultatif)">
+      <button type="submit" class="btn-primary">Ajouter</button>
+    </form>
+
+    {% if etudes %}
     <table class="equipe-table equipe-table-historique">
       <thead>
-        <tr>
-          <th>Date</th>
-          <th>Action</th>
-          <th>Par</th>
-        </tr>
+        <tr><th>Partenaire</th><th>État</th><th>Commentaire</th><th>Mis à jour</th></tr>
       </thead>
       <tbody>
-        {% for h in historique %}
+        {% for e in etudes %}
         <tr>
-          <td>{{ h.date|heure_paris }}</td>
-          <td>{{ h.action }}</td>
-          <td>{{ h.auteur }}</td>
+          <td>{{ e.partenaire }}</td>
+          <td>{{ libelles_etats.get(e.etat, e.etat) }}</td>
+          <td>{{ e.commentaire or '—' }}</td>
+          <td>{{ e.date_maj|heure_paris }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    {% else %}
+    <p class="equipe-vide">Aucun partenaire interrogé pour ce dossier.</p>
+    {% endif %}
+  </div>
+
+  <div class="fiche-equipe-bloc">
+    <h2 class="equipe-titre-section">Historique</h2>
+    {% if historique %}
+    <div style="max-height: 320px; overflow-y: auto;">
+      <table class="equipe-table equipe-table-historique">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Action</th>
+            <th>Par</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in historique %}
+          <tr>
+            <td>{{ h.date|heure_paris }}</td>
+            <td>{{ h.action }}</td>
+            <td>{{ h.auteur }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% else %}
     <p class="equipe-vide">Aucune action enregistrée pour ce dossier.</p>
     {% endif %}

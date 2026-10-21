@@ -67,7 +67,7 @@
 
     <button type="submit" class="btn-primary">Rechercher</button>
     <a href="/equipe/dossiers" class="equipe-reset">Réinitialiser</a>
-    <a href="/equipe/dossiers/export.csv?q={{ q|urlencode }}&statut={{ statut_filtre|urlencode }}&profil={{ profil_filtre|urlencode }}&produit={{ produit_filtre|urlencode }}&partenaire={{ partenaire_filtre|urlencode }}&du={{ du|urlencode }}&au={{ au|urlencode }}" class="equipe-reset">Exporter en CSV</a>
+    <a href="/equipe/dossiers/export.csv?q={{ q|urlencode }}&statut={{ statut_filtre|urlencode }}&profil={{ profil_filtre|urlencode }}&produit={{ produit_filtre|urlencode }}&partenaire={{ partenaire_filtre|urlencode }}&archives={{ archives|urlencode }}&du={{ du|urlencode }}&au={{ au|urlencode }}" class="equipe-reset">Exporter en CSV</a>
   </form>
 
   {% if dossiers.items %}
@@ -81,6 +81,7 @@
         <th>E-mail</th>
         <th>Besoin</th>
         <th>Statut</th>
+        <th>Pièces</th>
         <th>Date</th>
         <th>Dernière action</th>
       </tr>
@@ -89,6 +90,7 @@
       {% for d in dossiers.items %}
       {% set r = d.reponses or {} %}
       {% set derniere = dernieres.get(d.id) %}
+      {% set manque = manquantes.get(d.id) %}
       <tr>
         <td><a href="/equipe/dossiers/{{ d.id }}" class="equipe-lien-dossier">{{ d.numero_dossier }}</a></td>
         <td>{{ r.get('nom', '') }}</td>
@@ -97,6 +99,13 @@
         <td>{{ r.get('email', '') }}</td>
         <td>{{ r.get('besoin', '') }}</td>
         <td>{{ libelles.get(d.statut, d.statut) }}</td>
+        <td>
+          {% if manque %}
+            <span style="color:#b42318;">Manque : {{ manque|join(', ') }}</span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
         <td>{{ d.date_creation|heure_paris("%d/%m/%Y") }}</td>
         <td>
           {% if derniere %}

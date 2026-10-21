@@ -18,8 +18,7 @@ from sqlalchemy import or_, exists, and_
 from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document, Rappel, EtudePartenaire
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents, notifier_equipe_depot
-from stockage import enregistrer_fichier, lire_fichier
-
+from stockage import enregistrer_fichier, lire_fichier, supprimer_fichier, StockageErreur, existe_dans_bucket, adresse_temporaire
 load_dotenv()
 
 app = Flask(__name__)
@@ -93,10 +92,12 @@ def accueil():
     produits = Produit.query.all()
     return render_template("accueil.html", produits=produits, numero_dossier=None)
 
+
 @app.route("/catalogue")
 def catalogue():
     produits = Produit.query.all()
     return render_template("catalogue.html", produits=produits)
+
 
 @app.route("/devis")
 def devis_choix():
@@ -109,6 +110,7 @@ def devis_choix():
         vers_devis=True
     )
 
+
 @app.route("/particuliers")
 def page_particuliers():
     produits = Produit.query.all()
@@ -119,6 +121,7 @@ def page_particuliers():
         sous_titre="Nos solutions pour vous et vos proches.",
         vers_devis=False
     )
+
 
 @app.route("/professionnels")
 def page_professionnels():
@@ -131,10 +134,12 @@ def page_professionnels():
         vers_devis=False
     )
 
+
 @app.route("/produits/<int:produit_id>")
 def fiche_produit(produit_id):
     produit = Produit.query.get_or_404(produit_id)
     return render_template("produit.html", produit=produit)
+
 
 @app.route("/produits/<int:produit_id>/devis", methods=["GET", "POST"])
 def formulaire(produit_id):
@@ -169,12 +174,14 @@ def formulaire(produit_id):
 
     return render_template("formulaire.html", produit=produit)
 
+
 @app.route("/dossiers/<int:dossier_id>/refuser")
 def refuser_devis(dossier_id):
     dossier = Dossier.query.get_or_404(dossier_id)
     dossier.statut = "refuse"
     db.session.commit()
     return redirect("/catalogue")
+
 
 @app.route("/dossiers/<int:dossier_id>/signature", methods=["GET", "POST"])
 def signature(dossier_id):
@@ -394,7 +401,7 @@ def equipe_tableau_de_bord():
         nombre = Dossier.query.filter_by(statut=valeur, archive=False).count()
         compteurs.append({"valeur": valeur, "libelle": libelle, "nombre": nombre})
 
-    derniers_dossiers = Dossier.query.order_by(Dossier.date_creation.desc()).limit(10).all()
+    derniers_dossiers = Dossier.query.filter_by(archive=False).order_by(Dossier.date_creation.desc()).limit(10).all()
 
     maintenant = datetime.utcnow()
     demain_paris = (datetime.now(ZoneInfo("Europe/Paris")) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -419,6 +426,32 @@ def equipe_tableau_de_bord():
         derniers_dossiers=derniers_dossiers,
         a_faire=a_faire
     )
+
+
+def pieces_manquantes(ids):
+    manquantes = {}
+    if not ids:
+        return manquantes
+
+    demandees = {}
+    demandes = DemandeDocuments.query.filter(
+        DemandeDocuments.dossier_id.in_(ids),
+        DemandeDocuments.revoquee.is_(False)
+    ).all()
+    for dm in demandes:
+        demandees.setdefault(dm.dossier_id, set()).update(dm.pieces or [])
+
+    recues = {}
+    documents = Document.query.filter(Document.dossier_id.in_(ids)).all()
+    for doc in documents:
+        recues.setdefault(doc.dossier_id, set()).add(doc.categorie)
+
+    for dossier_id, pieces in demandees.items():
+        restantes = pieces - recues.get(dossier_id, set())
+        if restantes:
+            manquantes[dossier_id] = [libelle for valeur, libelle in PIECES if valeur in restantes]
+
+    return manquantes
 
 
 @app.route("/equipe/dossiers")
@@ -466,6 +499,7 @@ def equipe_dossiers():
         requete = requete.filter(Dossier.archive.is_(True))
     else:
         requete = requete.filter(Dossier.archive.is_(False))
+
     if du:
         try:
             debut = datetime.strptime(du, "%Y-%m-%d")
@@ -501,6 +535,8 @@ def equipe_dossiers():
         for h in lignes:
             dernieres[h.dossier_id] = h
 
+    manquantes = pieces_manquantes(ids)
+
     return render_template(
         "equipe_dossiers.html",
         dossiers=dossiers,
@@ -516,8 +552,10 @@ def equipe_dossiers():
         q=q,
         du=du,
         au=au,
-        dernieres=dernieres
+        dernieres=dernieres,
+        manquantes=manquantes
     )
+
 
 def proteger_csv(valeur):
     texte = "" if valeur is None else str(valeur)
@@ -536,6 +574,7 @@ def equipe_export_csv():
     profil_filtre = request.args.get("profil", "")
     produit_filtre = request.args.get("produit", "")
     partenaire_filtre = request.args.get("partenaire", "")
+    archives = request.args.get("archives", "")
     q = request.args.get("q", "").strip()
     du = request.args.get("du", "")
     au = request.args.get("au", "")
@@ -563,6 +602,10 @@ def equipe_export_csv():
             EtudePartenaire.dossier_id == Dossier.id,
             EtudePartenaire.partenaire == partenaire_filtre
         )))
+    if archives == "1":
+        requete = requete.filter(Dossier.archive.is_(True))
+    else:
+        requete = requete.filter(Dossier.archive.is_(False))
     if du:
         try:
             requete = requete.filter(Dossier.date_creation >= datetime.strptime(du, "%Y-%m-%d"))
@@ -600,6 +643,8 @@ def equipe_export_csv():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=" + nom_fichier}
     )
+
+
 @app.route("/equipe/dossiers/<int:dossier_id>")
 @login_required
 def equipe_fiche_dossier(dossier_id):
@@ -651,6 +696,23 @@ def equipe_fiche_dossier(dossier_id):
     rappels = Rappel.query.filter_by(dossier_id=dossier.id).order_by(Rappel.fait.asc(), Rappel.date_rappel.asc()).all()
     etudes = EtudePartenaire.query.filter_by(dossier_id=dossier.id).order_by(EtudePartenaire.date_maj.desc()).all()
 
+    reponses_dossier = dossier.reponses or {}
+    email = (reponses_dossier.get("email") or "").strip()
+    telephone = (reponses_dossier.get("telephone") or "").strip()
+
+    criteres = []
+    if email:
+        criteres.append(Dossier.reponses["email"].as_string().collate("utf8mb4_general_ci") == email)
+    if telephone:
+        criteres.append(Dossier.reponses["telephone"].as_string() == telephone)
+
+    memes_personnes = []
+    if criteres:
+        memes_personnes = Dossier.query.filter(
+            Dossier.id != dossier.id,
+            or_(*criteres)
+        ).order_by(Dossier.date_creation.desc()).all()
+
     return render_template(
         "equipe_fiche_dossier.html",
         dossier=dossier,
@@ -667,7 +729,8 @@ def equipe_fiche_dossier(dossier_id):
         etudes=etudes,
         partenaires=PARTENAIRES,
         etats_etude=ETATS_ETUDE,
-        libelles_etats=dict(ETATS_ETUDE)
+        libelles_etats=dict(ETATS_ETUDE),
+        memes_personnes=memes_personnes
     )
 
 
@@ -692,6 +755,8 @@ def equipe_changer_statut(dossier_id):
         db.session.commit()
 
     return redirect(f"/equipe/dossiers/{dossier.id}")
+
+
 @app.route("/equipe/dossiers/<int:dossier_id>/archivage", methods=["POST"])
 @login_required
 def equipe_archiver_dossier(dossier_id):
@@ -893,7 +958,6 @@ def verifier_lien(token):
         return demande
     return None
 
-
 @app.route("/depot/<token>", methods=["GET", "POST"])
 def depot_page(token):
     demande = verifier_lien(token)
@@ -907,6 +971,7 @@ def depot_page(token):
     if request.method == "POST":
         acceptes = []
         refuses = []
+        envoyes = []
 
         for valeur, libelle in pieces:
             fichier = request.files.get(f"fichier_{valeur}")
@@ -931,8 +996,13 @@ def depot_page(token):
             nom_stocke = f"{uuid.uuid4().hex}.{extension}"
             empreinte = hashlib.sha256(contenu).hexdigest()
 
-            enregistrer_fichier(contenu, nom_stocke)
+            try:
+                enregistrer_fichier(contenu, nom_stocke, type_detecte.mime)
+            except StockageErreur:
+                refuses.append((libelle, "Le service d'envoi est momentanément indisponible. Merci de réessayer dans quelques minutes."))
+                continue
 
+            envoyes.append(nom_stocke)
             db.session.add(Document(
                 dossier_id=dossier.id,
                 demande_id=demande.id,
@@ -946,15 +1016,29 @@ def depot_page(token):
             acceptes.append(libelle)
 
         if acceptes:
-            db.session.add(Historique(
-                dossier_id=dossier.id,
-                action="Documents déposés par le client : " + ", ".join(acceptes)
-            ))
-            db.session.commit()
+            numero = dossier.numero_dossier
             try:
-                notifier_equipe_depot(dossier.numero_dossier, acceptes)
+                db.session.add(Historique(
+                    dossier_id=dossier.id,
+                    action="Documents déposés par le client : " + ", ".join(acceptes)
+                ))
+                db.session.commit()
             except Exception as erreur:
-                print(f"[ERREUR E-MAIL]{erreur}")
+                db.session.rollback()
+                print(f"[ERREUR BASE] {erreur}")
+                for nom in envoyes:
+                    try:
+                        supprimer_fichier(nom)
+                    except StockageErreur:
+                        print(f"[ATTENTION] fichier orphelin à supprimer : {nom}")
+                for libelle in acceptes:
+                    refuses.append((libelle, "Une erreur est survenue. Merci de réessayer dans quelques minutes."))
+                acceptes = []
+            else:
+                try:
+                    notifier_equipe_depot(numero, acceptes)
+                except Exception as erreur:
+                    print(f"[ERREUR E-MAIL] {erreur}")
 
         if not acceptes and not refuses:
             refuses.append(("", "Aucun fichier n'a été sélectionné."))
@@ -968,7 +1052,6 @@ def depot_page(token):
         pieces=pieces,
         expiration=demande.date_expiration
     )
-
 
 @app.errorhandler(413)
 def envoi_trop_gros(erreur):
@@ -986,20 +1069,36 @@ def equipe_telecharger_document(document_id):
     if current_user.role != "admin":
         abort(404)
     document = Document.query.get_or_404(document_id)
-    contenu = lire_fichier(document.nom_stocke)
+
+    try:
+        if existe_dans_bucket(document.nom_stocke):
+            adresse = adresse_temporaire(document.nom_stocke, 60, document.nom_original, document.type_reel)
+            contenu = None
+        else:
+            adresse = None
+            contenu = lire_fichier(document.nom_stocke, document.sha256)
+    except StockageErreur:
+        return Response(
+            "Le document est momentanément indisponible. Merci de réessayer dans quelques minutes.",
+            status=503,
+            content_type="text/plain; charset=utf-8"
+        )
+
     db.session.add(Historique(
         dossier_id=document.dossier_id,
         utilisateur_id=current_user.id,
-        action="Document téléchargé : " + document.nom_original
+        action="Document ouvert : " + document.nom_original
     ))
     db.session.commit()
+
+    if adresse:
+        return redirect(adresse)
+
     return Response(
         contenu,
         mimetype=document.type_reel,
         headers={"Content-Disposition": "inline; filename=" + document.nom_stocke}
     )
-
-
 with app.app_context():
     db.create_all()
 

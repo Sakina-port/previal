@@ -11,7 +11,7 @@
     </div>
     <a href="/deconnexion" class="btn-primary equipe-deconnexion">Se déconnecter</a>
   </div>
-
+{% include "_recherche_equipe.html" %}
   <div class="equipe-compteurs">
     {% for c in compteurs %}
     <a href="/equipe/dossiers?statut={{ c.valeur }}" class="equipe-compteur">
