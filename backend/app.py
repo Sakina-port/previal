@@ -19,6 +19,7 @@ from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur,
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents, notifier_equipe_depot
 from stockage import enregistrer_fichier, lire_fichier, supprimer_fichier, StockageErreur, existe_dans_bucket, adresse_temporaire
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -329,14 +330,24 @@ def contact():
     }
 
     champs_obligatoires = ["civilite", "nom", "prenom", "telephone", "email", "code_postal", "ville", "profil", "besoin"]
+    consentement = request.form.get("rgpd") == "on"
+    texte_consentement = "J'accepte que mes données soient utilisées par Prévial pour traiter ma demande."
     champ_manquant = False
     for champ in champs_obligatoires:
         if not reponses[champ]:
             champ_manquant = True
 
-    if champ_manquant:
+    if champ_manquant or not consentement:
         produits = Produit.query.all()
-        return render_template("accueil.html", produits=produits, numero_dossier=None, erreur_formulaire="Merci de remplir tous les champs obligatoires avant d'envoyer votre demande.")
+        if not consentement:
+            message = "Merci d'accepter le traitement de vos données pour envoyer votre demande."
+        else:
+            message = "Merci de remplir tous les champs obligatoires avant d'envoyer votre demande."
+        return render_template("accueil.html", produits=produits, numero_dossier=None, erreur_formulaire=message)
+
+    reponses["consentement_rgpd"] = True
+    reponses["consentement_date"] = datetime.now(ZoneInfo("Europe/Paris")).strftime("%Y-%m-%d %H:%M:%S")
+    reponses["consentement_texte"] = texte_consentement
 
     nouveau_dossier = Dossier(
         statut="nouveau",
@@ -958,6 +969,7 @@ def verifier_lien(token):
         return demande
     return None
 
+
 @app.route("/depot/<token>", methods=["GET", "POST"])
 def depot_page(token):
     demande = verifier_lien(token)
@@ -1053,6 +1065,7 @@ def depot_page(token):
         expiration=demande.date_expiration
     )
 
+
 @app.errorhandler(413)
 def envoi_trop_gros(erreur):
     return render_template(
@@ -1099,6 +1112,8 @@ def equipe_telecharger_document(document_id):
         mimetype=document.type_reel,
         headers={"Content-Disposition": "inline; filename=" + document.nom_stocke}
     )
+
+
 with app.app_context():
     db.create_all()
 

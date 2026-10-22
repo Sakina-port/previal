@@ -50,13 +50,17 @@
     <div class="contact-section-inner">
       <h2>Être contacté</h2>
       <p class="contact-intro">Remplissez ce formulaire, un conseiller Prévial vous recontacte rapidement.</p>
-
+      {% if erreur_formulaire %}
+      <div style="background:#FDECEC; color:#8A1F1F; border:1px solid #F3B4B4; padding:12px 14px; border-radius:6px; margin-bottom:16px;">
+        {{ erreur_formulaire }}
+      </div>
+      {% endif %}
       {% if numero_dossier %}
       <div class="contact-confirmation">
         <p>Merci ! Votre demande a bien été enregistrée sous le numéro <strong>{{ numero_dossier }}</strong>. Un conseiller Prévial vous recontacte prochainement.</p>
       </div>
       {% else %}
-      <form method="POST" action="/contact" id="form-contact">
+            <form method="POST" action="/contact#formulaire-contact" id="form-contact">
 
         <div class="form-step" data-step="1">
           <div class="form-group">
