@@ -13,6 +13,7 @@ import csv
 import io
 import json
 import zipfile
+import re 
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from weasyprint import HTML
@@ -313,6 +314,41 @@ def deconnexion():
     logout_user()
     return redirect("/")
 
+def valider_formulaire(reponses):
+    erreurs = []
+    for cle in reponses:
+        if isinstance(reponses[cle], str):
+            reponses[cle] = reponses[cle].strip()
+
+    if reponses["civilite"] not in ("Monsieur", "Madame"):
+        erreurs.append("Civilité invalide.")
+    if reponses["profil"] not in ("Particulier", "TNS", "Entreprise"):
+        erreurs.append("Profil invalide.")
+    if reponses["besoin"] not in ("Santé", "Prévoyance", "Santé + Prévoyance", "Autre"):
+        erreurs.append("Besoin invalide.")
+    if reponses["moyen_contact_prefere"] not in ("Téléphone", "E-mail"):
+        erreurs.append("Moyen de contact invalide.")
+    if reponses["creneau_souhaite"] not in ("Matin", "Après-midi", "Soir", "", None):
+        erreurs.append("Créneau invalide.")
+
+    if len(reponses["nom"]) > 100 or len(reponses["prenom"]) > 100 or len(reponses["ville"]) > 100:
+        erreurs.append("Le nom, le prénom et la ville ne doivent pas dépasser 100 caractères.")
+
+    telephone = re.sub(r"[ .\-()]", "", reponses["telephone"])
+    if not re.fullmatch(r"\+?\d{8,15}", telephone):
+        erreurs.append("Le numéro de téléphone n'est pas valide.")
+
+    if not re.fullmatch(r"\d{5}", reponses["code_postal"]):
+        erreurs.append("Le code postal doit contenir 5 chiffres.")
+
+    email = reponses["email"]
+    if len(email) > 200 or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        erreurs.append("L'adresse e-mail n'est pas valide.")
+
+    if reponses["commentaire"] and len(reponses["commentaire"]) > 1000:
+        erreurs.append("Le commentaire ne doit pas dépasser 1000 caractères.")
+
+    return erreurs
 
 @app.route("/contact", methods=["POST"])
 def contact():
@@ -346,6 +382,10 @@ def contact():
         else:
             message = "Merci de remplir tous les champs obligatoires avant d'envoyer votre demande."
         return render_template("accueil.html", produits=produits, numero_dossier=None, erreur_formulaire=message)
+    erreurs = valider_formulaire(reponses)
+    if erreurs:
+        produits = Produit.query.all()
+        return render_template("accueil.html", produits=produits, numero_dossier=None, erreur_formulaire=" ".join(erreurs))
 
     reponses["consentement_rgpd"] = True
     reponses["consentement_date"] = datetime.now(ZoneInfo("Europe/Paris")).strftime("%Y-%m-%d %H:%M:%S")
