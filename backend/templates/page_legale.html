@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}PREVIAL — {{ titre }}{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <h1>{{ titre }}</h1>
+</section>
+
+<div style="max-width:800px; margin:0 auto; padding:0 24px 40px;">
+  <div style="background:#FFF4D6; border:1px solid #E8C55B; color:#6B4E00; padding:12px 14px; border-radius:6px; margin-bottom:20px;">
+    <strong>Texte provisoire, à compléter par PREVIAL.</strong>
+    Ce contenu doit être fourni et validé par la direction avec son conseil juridique avant la mise en ligne.
+  </div>
+
+  {% if page == "mentions" %}
+  <h2>Éditeur du site</h2>
+  <p>Dénomination sociale : <em>[à compléter]</em><br>
+  Forme juridique et capital : <em>[à compléter]</em><br>
+  Adresse du siège : <em>[à compléter]</em><br>
+  SIREN : <em>[à compléter]</em><br>
+  Directeur de la publication : <em>[à compléter]</em></p>
+
+  <h2>Courtage en assurance</h2>
+  <p>Numéro d'immatriculation ORIAS : <em>[à compléter]</em><br>
+  Assurance de responsabilité civile professionnelle : <em>[à compléter]</em><br>
+  Médiateur compétent : <em>[à compléter]</em></p>
+
+  <h2>Hébergeur du site</h2>
+  <p>Nom et adresse de l'hébergeur : <em>[à compléter]</em></p>
+
+  {% elif page == "confidentialite" %}
+  <h2>Données collectées</h2>
+  <p>Les informations saisies dans le formulaire de contact : identité, coordonnées, besoin, et les pièces déposées sur demande.</p>
+
+  <h2>Finalité</h2>
+  <p>Traiter votre demande et vous recontacter. <em>[à compléter]</em></p>
+
+  <h2>Durée de conservation</h2>
+  <p><em>[à compléter par PREVIAL]</em></p>
+
+  <h2>Vos droits</h2>
+  <p>Accès, rectification, effacement, opposition. Contact : <em>[adresse à compléter]</em></p>
+
+  {% elif page == "cookies" %}
+  <h2>Cookies utilisés</h2>
+  <p>Le site utilise uniquement un cookie technique nécessaire à la connexion de l'espace réservé à l'équipe. Aucun cookie publicitaire ni de mesure d'audience n'est utilisé à ce jour. <em>[à confirmer par PREVIAL]</em></p>
+  {% endif %}
+</div>
+{% endblock %}

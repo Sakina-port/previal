@@ -9,7 +9,7 @@
       <h1>Bonjour {{ current_user.prenom }}</h1>
       <p class="equipe-sous-titre">Tableau de bord de l'espace privé Prévial</p>
     </div>
-    <a href="/deconnexion" class="btn-primary equipe-deconnexion">Se déconnecter</a>
+    <a href="/equipe/deconnexion" class="btn-primary equipe-deconnexion">Se déconnecter</a>
   </div>
 {% include "_recherche_equipe.html" %}
   <div class="equipe-compteurs">
@@ -58,7 +58,7 @@
   <h2 class="equipe-titre-section">Dernières demandes</h2>
  
 <a href="/equipe/dossiers" class="btn-primary" style="margin-bottom:16px;">Voir toutes les demandes</a>
-<a href="/equipe/journal-connexions" class="btn-primary" style="margin-bottom:16px;">Journal des connexions</a>
+{% if est_admin %}<a href="/equipe/journal-connexions" class="btn-primary" style="margin-bottom:16px;">Journal des connexions</a>{% endif %}
   {% if derniers_dossiers %}
   <table class="equipe-table">
     <thead>

@@ -13,7 +13,7 @@ import csv
 import io
 import json
 import zipfile
-import re 
+import re
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from weasyprint import HTML
@@ -77,6 +77,12 @@ TYPES_AUTORISES = {
     "image/png": "png",
 }
 TAILLE_MAX_FICHIER = 10 * 1024 * 1024
+ROLES_EQUIPE = ("admin", "gestionnaire")
+
+
+@app.context_processor
+def droits_pour_templates():
+    return {"est_admin": current_user.is_authenticated and current_user.role == "admin"}
 
 
 @app.template_filter("heure_paris")
@@ -311,8 +317,14 @@ def espace_client():
 
 @app.route("/deconnexion")
 def deconnexion():
+    etait_equipe = current_user.is_authenticated and current_user.role in ROLES_EQUIPE
     logout_user()
-    return redirect("/")
+    return redirect("/equipe" if etait_equipe else "/")
+@app.route("/equipe/deconnexion")
+def equipe_deconnexion():
+    logout_user()
+    return redirect("/equipe")
+
 
 def valider_formulaire(reponses):
     erreurs = []
@@ -350,6 +362,7 @@ def valider_formulaire(reponses):
 
     return erreurs
 
+
 @app.route("/contact", methods=["POST"])
 def contact():
     reponses = {
@@ -382,6 +395,7 @@ def contact():
         else:
             message = "Merci de remplir tous les champs obligatoires avant d'envoyer votre demande."
         return render_template("accueil.html", produits=produits, numero_dossier=None, erreur_formulaire=message)
+
     erreurs = valider_formulaire(reponses)
     if erreurs:
         produits = Produit.query.all()
@@ -426,6 +440,21 @@ def contact_info():
     return render_template("contact_info.html")
 
 
+@app.route("/mentions-legales")
+def mentions_legales():
+    return render_template("page_legale.html", titre="Mentions légales", page="mentions")
+
+
+@app.route("/confidentialite")
+def confidentialite():
+    return render_template("page_legale.html", titre="Politique de confidentialité", page="confidentialite")
+
+
+@app.route("/cookies")
+def cookies():
+    return render_template("page_legale.html", titre="Gestion des cookies", page="cookies")
+
+
 @app.route("/equipe", methods=["GET", "POST"])
 def equipe_connexion():
     if request.method == "POST":
@@ -436,7 +465,7 @@ def equipe_connexion():
 
         reussi = bool(
             utilisateur
-            and utilisateur.role == "admin"
+            and utilisateur.role in ROLES_EQUIPE
             and bcrypt.checkpw(mot_de_passe_tape.encode('utf-8'), utilisateur.mot_de_passe.encode('utf-8'))
         )
 
@@ -460,7 +489,7 @@ def equipe_connexion():
 @app.route("/equipe/tableau-de-bord")
 @login_required
 def equipe_tableau_de_bord():
-    if current_user.role != "admin":
+    if current_user.role not in ROLES_EQUIPE:
         abort(404)
 
     compteurs = []
@@ -495,6 +524,16 @@ def equipe_tableau_de_bord():
     )
 
 
+@app.route("/equipe/journal-connexions")
+@login_required
+def equipe_journal_connexions():
+    if current_user.role != "admin":
+        abort(404)
+
+    lignes = JournalConnexion.query.order_by(JournalConnexion.date_creation.desc()).limit(50).all()
+    return render_template("equipe_journal_connexions.html", lignes=lignes)
+
+
 def pieces_manquantes(ids):
     manquantes = {}
     if not ids:
@@ -519,19 +558,12 @@ def pieces_manquantes(ids):
             manquantes[dossier_id] = [libelle for valeur, libelle in PIECES if valeur in restantes]
 
     return manquantes
-@app.route("/equipe/journal-connexions")
-@login_required
-def equipe_journal_connexions():
-    if current_user.role != "admin":
-        abort(404)
 
-    lignes = JournalConnexion.query.order_by(JournalConnexion.date_creation.desc()).limit(50).all()
-    return render_template("equipe_journal_connexions.html", lignes=lignes)
 
 @app.route("/equipe/dossiers")
 @login_required
 def equipe_dossiers():
-    if current_user.role != "admin":
+    if current_user.role not in ROLES_EQUIPE:
         abort(404)
 
     page = request.args.get("page", 1, type=int)
@@ -722,7 +754,7 @@ def equipe_export_csv():
 @app.route("/equipe/dossiers/<int:dossier_id>")
 @login_required
 def equipe_fiche_dossier(dossier_id):
-    if current_user.role != "admin":
+    if current_user.role not in ROLES_EQUIPE:
         abort(404)
 
     dossier = Dossier.query.get_or_404(dossier_id)
@@ -897,7 +929,7 @@ def equipe_export_complet(dossier_id):
 @app.route("/equipe/dossiers/<int:dossier_id>/statut", methods=["POST"])
 @login_required
 def equipe_changer_statut(dossier_id):
-    if current_user.role != "admin":
+    if current_user.role not in ROLES_EQUIPE:
         abort(404)
 
     dossier = Dossier.query.get_or_404(dossier_id)
@@ -948,7 +980,7 @@ def equipe_archiver_dossier(dossier_id):
 @app.route("/equipe/dossiers/<int:dossier_id>/notes", methods=["POST"])
 @login_required
 def equipe_ajouter_note(dossier_id):
-    if current_user.role != "admin":
+    if current_user.role not in ROLES_EQUIPE:
         abort(404)
 
     dossier = Dossier.query.get_or_404(dossier_id)
@@ -965,7 +997,7 @@ def equipe_ajouter_note(dossier_id):
 @app.route("/equipe/dossiers/<int:dossier_id>/rappels", methods=["POST"])
 @login_required
 def equipe_ajouter_rappel(dossier_id):
-    if current_user.role != "admin":
+    if current_user.role not in ROLES_EQUIPE:
         abort(404)
 
     dossier = Dossier.query.get_or_404(dossier_id)
@@ -999,7 +1031,7 @@ def equipe_ajouter_rappel(dossier_id):
 @app.route("/equipe/dossiers/<int:dossier_id>/rappels/<int:rappel_id>/fait", methods=["POST"])
 @login_required
 def equipe_rappel_fait(dossier_id, rappel_id):
-    if current_user.role != "admin":
+    if current_user.role not in ROLES_EQUIPE:
         abort(404)
 
     dossier = Dossier.query.get_or_404(dossier_id)
@@ -1021,7 +1053,7 @@ def equipe_rappel_fait(dossier_id, rappel_id):
 @app.route("/equipe/dossiers/<int:dossier_id>/partenaires", methods=["POST"])
 @login_required
 def equipe_ajouter_partenaire(dossier_id):
-    if current_user.role != "admin":
+    if current_user.role not in ROLES_EQUIPE:
         abort(404)
 
     dossier = Dossier.query.get_or_404(dossier_id)
