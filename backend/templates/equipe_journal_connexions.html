@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}PREVIAL — Journal des connexions{% endblock %}
+
+{% block content %}
+<div class="equipe-wrap">
+  <div class="equipe-entete">
+    <div>
+      <h1>Journal des connexions</h1>
+      <p class="equipe-sous-titre">Les 50 dernières tentatives de connexion à l'espace équipe</p>
+    </div>
+    <a href="/equipe/tableau-de-bord" class="btn-primary equipe-deconnexion">Retour au tableau de bord</a>
+  </div>
+
+  {% if lignes %}
+  <table class="equipe-table">
+    <thead>
+      <tr><th>Date</th><th>E-mail saisi</th><th>Résultat</th><th>Adresse IP</th></tr>
+    </thead>
+    <tbody>
+      {% for l in lignes %}
+      <tr>
+        <td>{{ l.date_creation|heure_paris }}</td>
+        <td>{{ l.email_saisi or '—' }}</td>
+        <td>
+          {% if l.succes %}Réussie{% else %}<span style="color:#b42318;"><strong>Échec</strong></span>{% endif %}
+        </td>
+        <td>{{ l.adresse_ip or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="equipe-vide">Aucune connexion enregistrée.</p>
+  {% endif %}
+</div>
+{% endblock %}

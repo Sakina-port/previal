@@ -160,3 +160,12 @@ class EtudePartenaire(db.Model):
     commentaire = db.Column(db.String(255))
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
     date_maj = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class JournalConnexion(db.Model):
+    __tablename__ = 'journal_connexions'
+    id = db.Column(db.Integer, primary_key=True)
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=True)
+    email_saisi = db.Column(db.String(200))
+    succes = db.Column(db.Boolean, nullable=False)
+    adresse_ip = db.Column(db.String(45))
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)

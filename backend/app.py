@@ -18,7 +18,7 @@ from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from weasyprint import HTML
 from sqlalchemy import or_, exists, and_
-from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document, Rappel, EtudePartenaire
+from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document, Rappel, EtudePartenaire, JournalConnexion
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents, notifier_equipe_depot
 from stockage import enregistrer_fichier, lire_fichier, supprimer_fichier, StockageErreur, existe_dans_bucket, adresse_temporaire
@@ -429,12 +429,26 @@ def contact_info():
 @app.route("/equipe", methods=["GET", "POST"])
 def equipe_connexion():
     if request.method == "POST":
-        email = request.form.get("email")
-        mot_de_passe_tape = request.form.get("mot_de_passe")
+        email = request.form.get("email", "").strip()
+        mot_de_passe_tape = request.form.get("mot_de_passe", "")
 
         utilisateur = Utilisateur.query.filter_by(email=email).first()
 
-        if utilisateur and utilisateur.role == "admin" and bcrypt.checkpw(mot_de_passe_tape.encode('utf-8'), utilisateur.mot_de_passe.encode('utf-8')):
+        reussi = bool(
+            utilisateur
+            and utilisateur.role == "admin"
+            and bcrypt.checkpw(mot_de_passe_tape.encode('utf-8'), utilisateur.mot_de_passe.encode('utf-8'))
+        )
+
+        db.session.add(JournalConnexion(
+            utilisateur_id=utilisateur.id if utilisateur else None,
+            email_saisi=email[:200],
+            succes=reussi,
+            adresse_ip=(request.remote_addr or "")[:45]
+        ))
+        db.session.commit()
+
+        if reussi:
             login_user(utilisateur)
             return redirect("/equipe/tableau-de-bord")
         else:
@@ -505,7 +519,14 @@ def pieces_manquantes(ids):
             manquantes[dossier_id] = [libelle for valeur, libelle in PIECES if valeur in restantes]
 
     return manquantes
+@app.route("/equipe/journal-connexions")
+@login_required
+def equipe_journal_connexions():
+    if current_user.role != "admin":
+        abort(404)
 
+    lignes = JournalConnexion.query.order_by(JournalConnexion.date_creation.desc()).limit(50).all()
+    return render_template("equipe_journal_connexions.html", lignes=lignes)
 
 @app.route("/equipe/dossiers")
 @login_required
