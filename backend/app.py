@@ -11,6 +11,8 @@ import hashlib
 import filetype
 import csv
 import io
+import json
+import zipfile
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from weasyprint import HTML
@@ -742,6 +744,92 @@ def equipe_fiche_dossier(dossier_id):
         etats_etude=ETATS_ETUDE,
         libelles_etats=dict(ETATS_ETUDE),
         memes_personnes=memes_personnes
+    )
+
+
+def date_utc_texte(valeur):
+    return valeur.strftime("%Y-%m-%d %H:%M:%S") + " UTC" if valeur else None
+
+
+def donnees_dossier(dossier):
+    return {
+        "dossier": {
+            "numero": dossier.numero_dossier,
+            "statut": dossier.statut,
+            "archive": dossier.archive,
+            "date_creation": date_utc_texte(dossier.date_creation),
+            "formulaire": dossier.reponses or {},
+        },
+        "historique": [
+            {"date": date_utc_texte(h.date_creation), "action": h.action}
+            for h in Historique.query.filter_by(dossier_id=dossier.id).order_by(Historique.date_creation.asc()).all()
+        ],
+        "notes": [
+            {"date": date_utc_texte(n.date_creation), "contenu": n.contenu}
+            for n in Note.query.filter_by(dossier_id=dossier.id).order_by(Note.date_creation.asc()).all()
+        ],
+        "rappels": [
+            {"date_rappel": date_utc_texte(r.date_rappel), "contenu": r.contenu, "fait": r.fait}
+            for r in Rappel.query.filter_by(dossier_id=dossier.id).order_by(Rappel.date_rappel.asc()).all()
+        ],
+        "demandes_de_documents": [
+            {"date": date_utc_texte(dm.date_creation), "pieces": dm.pieces, "expiration": date_utc_texte(dm.date_expiration), "annulee": dm.revoquee}
+            for dm in DemandeDocuments.query.filter_by(dossier_id=dossier.id).order_by(DemandeDocuments.date_creation.asc()).all()
+        ],
+        "documents_deposes": [
+            {"date": date_utc_texte(doc.date_creation), "categorie": doc.categorie, "nom_original": doc.nom_original,
+             "type": doc.type_reel, "taille_octets": doc.taille, "sha256": doc.sha256}
+            for doc in Document.query.filter_by(dossier_id=dossier.id).order_by(Document.date_creation.asc()).all()
+        ],
+        "etudes_partenaires": [
+            {"partenaire": e.partenaire, "etat": e.etat, "commentaire": e.commentaire, "mise_a_jour": date_utc_texte(e.date_maj)}
+            for e in EtudePartenaire.query.filter_by(dossier_id=dossier.id).order_by(EtudePartenaire.date_creation.asc()).all()
+        ],
+        "remarque": "Les dates sont en heure UTC, sauf consentement_date (heure de Paris).",
+    }
+
+
+def pdf_dossier(dossier):
+    historique = Historique.query.filter_by(dossier_id=dossier.id).order_by(Historique.date_creation.asc()).all()
+    documents = Document.query.filter_by(dossier_id=dossier.id).order_by(Document.date_creation.asc()).all()
+    html = render_template(
+        "export_donnees_pdf.html",
+        dossier=dossier,
+        reponses=dossier.reponses or {},
+        historique=historique,
+        documents=documents,
+        libelles_pieces=dict(PIECES),
+        date_export=datetime.utcnow()
+    )
+    return HTML(string=html).write_pdf()
+
+
+@app.route("/equipe/dossiers/<int:dossier_id>/export-complet")
+@login_required
+def equipe_export_complet(dossier_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    dossier = Dossier.query.get_or_404(dossier_id)
+    contenu_json = json.dumps(donnees_dossier(dossier), ensure_ascii=False, indent=2)
+    contenu_pdf = pdf_dossier(dossier)
+
+    db.session.add(Historique(
+        dossier_id=dossier.id,
+        utilisateur_id=current_user.id,
+        action="Export des données du dossier (PDF et JSON)"
+    ))
+    db.session.commit()
+
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zip_fichier:
+        zip_fichier.writestr(f"donnees_{dossier.numero_dossier}.pdf", contenu_pdf)
+        zip_fichier.writestr(f"donnees_{dossier.numero_dossier}.json", contenu_json)
+
+    return Response(
+        archive.getvalue(),
+        mimetype="application/zip",
+        headers={"Content-Disposition": "attachment; filename=donnees_" + dossier.numero_dossier + ".zip"}
     )
 
 

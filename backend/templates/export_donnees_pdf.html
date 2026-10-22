@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #1f2933; }
+    h1 { color: #12304D; font-size: 18pt; margin-bottom: 2px; }
+    h2 { color: #12304D; font-size: 13pt; border-bottom: 1px solid #12304D; padding-bottom: 3px; margin-top: 22px; }
+    .sous-titre { color: #5F5E5A; margin-top: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; width: 35%; padding: 5px 8px; background: #E8F1FA; border: 1px solid #DDE3EA; }
+    td { padding: 5px 8px; border: 1px solid #DDE3EA; }
+    thead th { width: auto; background: #12304D; color: white; }
+    .note { font-size: 9pt; color: #5F5E5A; margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <h1>Données personnelles du dossier {{ dossier.numero_dossier }}</h1>
+  <p class="sous-titre">Document généré le {{ date_export|heure_paris }} (heure de Paris)</p>
+
+  <h2>Informations transmises par la personne</h2>
+  {% set champs = [("Civilité","civilite"),("Nom","nom"),("Prénom","prenom"),("Téléphone","telephone"),("E-mail","email"),("Code postal","code_postal"),("Ville","ville"),("Profil","profil"),("Besoin","besoin"),("Moyen de contact préféré","moyen_contact_prefere"),("Créneau souhaité","creneau_souhaite"),("Commentaire","commentaire")] %}
+  <table>
+    {% for libelle, cle in champs %}
+    <tr><th>{{ libelle }}</th><td>{{ reponses.get(cle) or "—" }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>Consentement</h2>
+  <table>
+    <tr><th>Date (heure de Paris)</th><td>{{ reponses.get("consentement_date") or "Non enregistré" }}</td></tr>
+    <tr><th>Texte accepté</th><td>{{ reponses.get("consentement_texte") or "—" }}</td></tr>
+  </table>
+
+  <h2>Documents déposés</h2>
+  {% if documents %}
+  <table>
+    <thead><tr><th>Date</th><th>Pièce</th><th>Nom du fichier</th><th>Type</th></tr></thead>
+    <tbody>
+      {% for d in documents %}
+      <tr>
+        <td>{{ d.date_creation|heure_paris }}</td>
+        <td>{{ libelles_pieces.get(d.categorie, d.categorie) }}</td>
+        <td>{{ d.nom_original }}</td>
+        <td>{{ d.type_reel }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Aucun document déposé.</p>
+  {% endif %}
+
+  <h2>Historique du dossier</h2>
+  <table>
+    <thead><tr><th>Date</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for h in historique %}
+      <tr><td>{{ h.date_creation|heure_paris }}</td><td>{{ h.action }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p class="note">Les notes internes de l'équipe ne sont pas incluses dans ce document.</p>
+</body>
+</html>
