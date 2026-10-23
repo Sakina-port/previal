@@ -5,3 +5,4 @@ __pycache__/
 backend/static/documents/
 .env.production
 backend/stockage/
+.env.docker
