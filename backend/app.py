@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, abort, Response
+from flask import Flask, render_template, request, redirect, abort, Response, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
@@ -29,6 +29,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change-moi-plus-tard')
 app.config['MAX_CONTENT_LENGTH'] = 60 * 1024 * 1024
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 AFFICHER_FONCTIONNALITES_MASQUEES = os.getenv('AFFICHER_FONCTIONNALITES_MASQUEES', 'False') == 'True'
 db.init_app(app)
 configurer_mail(app)
@@ -36,6 +37,16 @@ configurer_mail(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "compte"
+@app.before_request
+def session_avec_expiration():
+    session.permanent = True
+
+
+@login_manager.unauthorized_handler
+def non_connecte():
+    if request.path.startswith("/equipe"):
+        return redirect("/equipe")
+    return redirect("/compte")
 
 STATUTS = [
     ("nouveau", "Nouveau"),
