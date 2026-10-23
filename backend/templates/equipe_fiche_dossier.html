@@ -147,7 +147,14 @@
           <td>{{ libelles_pieces.get(d.categorie, d.categorie) }}</td>
           <td>{{ d.nom_original }}</td>
           <td>{{ (d.taille / 1024)|round(0)|int }} Ko</td>
-          <td>{% if est_admin %}<a href="/equipe/documents/{{ d.id }}/telecharger" target="_blank" class="equipe-lien-doc">Ouvrir</a>{% endif %}</td>
+          <td>
+            {% if est_admin %}
+            <a href="/equipe/documents/{{ d.id }}/telecharger" target="_blank" class="equipe-lien-doc">Ouvrir</a>
+            <form method="POST" action="/equipe/documents/{{ d.id }}/supprimer" style="display:inline;" onsubmit="return confirm('Mettre ce document à la corbeille ?');">
+              <button type="submit" class="equipe-bouton-lien">Supprimer</button>
+            </form>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -156,6 +163,34 @@
     <p class="equipe-vide">Aucun document reçu pour l'instant.</p>
     {% endif %}
   </div>
+
+  {% if est_admin and supprimes %}
+  <div class="fiche-equipe-bloc">
+    <h2 class="equipe-titre-section">Corbeille</h2>
+    <p class="equipe-note-info">Documents supprimés : ils sont encore conservés et peuvent être restaurés.</p>
+    <table class="equipe-table equipe-table-historique">
+      <thead>
+        <tr><th>Date de dépôt</th><th>Nom du fichier</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for s in supprimes %}
+        <tr>
+          <td>{{ s.date_creation|heure_paris }}</td>
+          <td>{{ s.nom_original }}</td>
+          <td>
+            <form method="POST" action="/equipe/documents/{{ s.id }}/restaurer" style="display:inline;">
+              <button type="submit" class="equipe-bouton-lien">Restaurer</button>
+            </form>
+            <form method="POST" action="/equipe/documents/{{ s.id }}/supprimer-definitivement" style="display:inline;" onsubmit="return confirm('Supprimer définitivement ce document ? Cette action est irréversible.');">
+              <button type="submit" class="equipe-bouton-lien" style="color:#b42318;">Supprimer définitivement</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
 
   <div class="fiche-equipe-bloc">
     <h2 class="equipe-titre-section">Notes internes</h2>

@@ -320,6 +320,8 @@ def deconnexion():
     etait_equipe = current_user.is_authenticated and current_user.role in ROLES_EQUIPE
     logout_user()
     return redirect("/equipe" if etait_equipe else "/")
+
+
 @app.route("/equipe/deconnexion")
 def equipe_deconnexion():
     logout_user()
@@ -548,7 +550,10 @@ def pieces_manquantes(ids):
         demandees.setdefault(dm.dossier_id, set()).update(dm.pieces or [])
 
     recues = {}
-    documents = Document.query.filter(Document.dossier_id.in_(ids)).all()
+    documents = Document.query.filter(
+        Document.dossier_id.in_(ids),
+        Document.statut != "supprime"
+    ).all()
     for doc in documents:
         recues.setdefault(doc.dossier_id, set()).add(doc.categorie)
 
@@ -798,7 +803,8 @@ def equipe_fiche_dossier(dossier_id):
             "etat": etat
         })
 
-    documents = Document.query.filter_by(dossier_id=dossier.id).order_by(Document.date_creation.desc()).all()
+    documents = Document.query.filter(Document.dossier_id == dossier.id, Document.statut != "supprime").order_by(Document.date_creation.desc()).all()
+    supprimes = Document.query.filter(Document.dossier_id == dossier.id, Document.statut == "supprime").order_by(Document.date_creation.desc()).all()
     rappels = Rappel.query.filter_by(dossier_id=dossier.id).order_by(Rappel.fait.asc(), Rappel.date_rappel.asc()).all()
     etudes = EtudePartenaire.query.filter_by(dossier_id=dossier.id).order_by(EtudePartenaire.date_maj.desc()).all()
 
@@ -831,6 +837,7 @@ def equipe_fiche_dossier(dossier_id):
         pieces=PIECES,
         libelles_pieces=dict(PIECES),
         documents=documents,
+        supprimes=supprimes,
         rappels=rappels,
         etudes=etudes,
         partenaires=PARTENAIRES,
@@ -1264,6 +1271,9 @@ def equipe_telecharger_document(document_id):
         abort(404)
     document = Document.query.get_or_404(document_id)
 
+    if document.statut == "supprime":
+        abort(404)
+
     try:
         if existe_dans_bucket(document.nom_stocke):
             adresse = adresse_temporaire(document.nom_stocke, 60, document.nom_original, document.type_reel)
@@ -1294,6 +1304,74 @@ def equipe_telecharger_document(document_id):
         headers={"Content-Disposition": "inline; filename=" + document.nom_stocke}
     )
 
+
+@app.route("/equipe/documents/<int:document_id>/supprimer", methods=["POST"])
+@login_required
+def equipe_supprimer_document(document_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    document = Document.query.get_or_404(document_id)
+
+    if document.statut != "supprime":
+        document.statut = "supprime"
+        db.session.add(Historique(
+            dossier_id=document.dossier_id,
+            utilisateur_id=current_user.id,
+            action="Document supprimé (corbeille) : " + document.nom_original
+        ))
+        db.session.commit()
+
+    return redirect(f"/equipe/dossiers/{document.dossier_id}")
+
+
+@app.route("/equipe/documents/<int:document_id>/restaurer", methods=["POST"])
+@login_required
+def equipe_restaurer_document(document_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    document = Document.query.get_or_404(document_id)
+
+    if document.statut == "supprime":
+        document.statut = "recu"
+        db.session.add(Historique(
+            dossier_id=document.dossier_id,
+            utilisateur_id=current_user.id,
+            action="Document restauré : " + document.nom_original
+        ))
+        db.session.commit()
+
+    return redirect(f"/equipe/dossiers/{document.dossier_id}")
+@app.route("/equipe/documents/<int:document_id>/supprimer-definitivement", methods=["POST"])
+@login_required
+def equipe_supprimer_definitivement(document_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    document = Document.query.get_or_404(document_id)
+    if document.statut != "supprime":
+        abort(404)
+
+    try:
+        supprimer_fichier(document.nom_stocke)
+    except StockageErreur:
+        return Response(
+            "Suppression impossible pour le moment. Merci de réessayer plus tard.",
+            status=503,
+            content_type="text/plain; charset=utf-8"
+        )
+
+    dossier_id = document.dossier_id
+    db.session.add(Historique(
+        dossier_id=dossier_id,
+        utilisateur_id=current_user.id,
+        action="Document supprimé définitivement : " + document.nom_original
+    ))
+    db.session.delete(document)
+    db.session.commit()
+
+    return redirect(f"/equipe/dossiers/{dossier_id}")
 
 with app.app_context():
     db.create_all()
