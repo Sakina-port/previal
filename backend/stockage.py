@@ -166,7 +166,6 @@ def lire_fichier(nom_stocke, sha256_attendu=None):
 
     return contenu
 
-
 def supprimer_fichier(nom_stocke):
     _verifier_nom(nom_stocke)
     if _mode() == "local":
@@ -182,6 +181,28 @@ def supprimer_fichier(nom_stocke):
     except (ClientError, BotoCoreError) as erreur:
         _echec("suppression", erreur)
 
+    chemin_local = os.path.join(DOSSIER_LOCAL, nom_stocke)
+    if os.path.isfile(chemin_local):
+        try:
+            os.remove(chemin_local)
+        except OSError as erreur:
+            _echec("suppression locale", erreur)
+
+_client_public_s3 = None
+
+
+def _client_public():
+    global _client_public_s3
+    if _client_public_s3 is None:
+        _client_public_s3 = boto3.client(
+            "s3",
+            endpoint_url=os.getenv("S3_PUBLIC_URL") or os.getenv("S3_ENDPOINT_URL"),
+            aws_access_key_id=os.getenv("S3_ACCESS_KEY"),
+            aws_secret_access_key=os.getenv("S3_SECRET_KEY"),
+            region_name=os.getenv("S3_REGION", "us-east-1"),
+            config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+        )
+    return _client_public_s3
 
 def adresse_temporaire(nom_stocke, duree_secondes=60, nom_telechargement=None, type_mime=None):
     _verifier_nom(nom_stocke)
@@ -195,7 +216,7 @@ def adresse_temporaire(nom_stocke, duree_secondes=60, nom_telechargement=None, t
         propre = re.sub(r"[^A-Za-z0-9._-]", "_", nom_telechargement)[:100]
         parametres["ResponseContentDisposition"] = f'inline; filename="{propre}"'
     try:
-        return _client().generate_presigned_url("get_object", Params=parametres, ExpiresIn=duree)
+            return _client_public().generate_presigned_url("get_object", Params=parametres, ExpiresIn=duree)
     except (ClientError, BotoCoreError) as erreur:
         _echec("création de l'adresse temporaire", erreur)
 def existe_dans_bucket(nom_stocke):

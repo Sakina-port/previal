@@ -1,0 +1,10 @@
+.env
+.git
+__pycache__
+*.pyc
+stockage/
+static/documents/
+test_*.py
+lister_bucket.py
+voir_bucket_detail.py
+telecharger_depuis_bucket.py

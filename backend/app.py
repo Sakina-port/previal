@@ -89,7 +89,7 @@ TYPES_AUTORISES = {
 }
 TAILLE_MAX_FICHIER = 10 * 1024 * 1024
 ROLES_EQUIPE = ("admin", "gestionnaire")
-
+DUREE_CONSERVATION_MOIS =36 
 
 @app.context_processor
 def droits_pour_templates():
@@ -467,6 +467,34 @@ def confidentialite():
 def cookies():
     return render_template("page_legale.html", titre="Gestion des cookies", page="cookies")
 
+@app.route("/robots.txt")
+def robots_txt():
+    contenu = (
+        "User-agent: *\n"
+        "Disallow: /equipe\n"
+        "Disallow: /depot/\n"
+        "Disallow: /compte\n"
+        "Disallow: /espace-client\n"
+        "Disallow: /devis\n"
+        "Disallow: /dossiers/\n"
+        "Disallow: /catalogue\n"
+        f"Sitemap: {request.host_url}sitemap.xml\n"
+    )
+    return Response(contenu, mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    adresses = ["/", "/particuliers", "/professionnels", "/qui-sommes-nous", "/contact-info",
+                "/mentions-legales", "/confidentialite", "/cookies"]
+    adresses += [f"/produits/{p.id}" for p in Produit.query.all()]
+
+    lignes = ['<?xml version="1.0" encoding="UTF-8"?>',
+              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for a in adresses:
+        lignes.append(f"  <url><loc>{request.host_url.rstrip('/')}{a}</loc></url>")
+    lignes.append("</urlset>")
+    return Response("\n".join(lignes), mimetype="application/xml")
 
 @app.route("/equipe", methods=["GET", "POST"])
 def equipe_connexion():
@@ -574,7 +602,24 @@ def pieces_manquantes(ids):
             manquantes[dossier_id] = [libelle for valeur, libelle in PIECES if valeur in restantes]
 
     return manquantes
+@app.route("/equipe/dossiers-a-examiner")
+@login_required
+def equipe_dossiers_a_examiner():
+    if current_user.role != "admin":
+        abort(404)
 
+    mois = request.args.get("mois", DUREE_CONSERVATION_MOIS, type=int)
+    mois = max(0, min(mois, 240))
+    limite = datetime.utcnow() - timedelta(days=30 * mois)
+
+    dossiers = Dossier.query.filter(Dossier.date_creation < limite).order_by(Dossier.date_creation.asc()).all()
+    return render_template(
+        "equipe_dossiers_a_examiner.html",
+        dossiers=dossiers,
+        mois=mois,
+        duree_par_defaut=DUREE_CONSERVATION_MOIS,
+        libelles=dict(STATUTS)
+    )
 
 @app.route("/equipe/dossiers")
 @login_required
