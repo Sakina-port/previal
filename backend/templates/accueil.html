@@ -138,9 +138,10 @@
           <div class="form-group">
             <label for="champ-creneau">Créneau souhaité</label>
             <select id="champ-creneau" name="creneau_souhaite">
-              <option value="Matin">Matin</option>
-              <option value="Après-midi">Après-midi</option>
-              <option value="Soir">Soir</option>
+              <option value="">Pas de préférence</option>
+              {% for c in creneaux %}
+              <option value="{{ c }}">{{ c }}</option>
+              {% endfor %}
             </select>
           </div>
           <div class="form-group">

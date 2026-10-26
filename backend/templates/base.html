@@ -6,11 +6,36 @@
   <meta name="description" content="{% block description %}PREVIAL, courtier en assurance : santé, prévoyance et assurance emprunteur pour particuliers, TNS et entreprises.{% endblock %}">
   <title>{% block title %}Prévial{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .charge {
+      cursor: progress;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+    .charge::after {
+      content: "";
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      margin-left: 8px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      vertical-align: -2px;
+      animation: rotation-bouton 0.7s linear infinite;
+    }
+    @keyframes rotation-bouton {
+      to { transform: rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .charge::after { animation-duration: 1.8s; }
+    }
+  </style>
 </head>
 <body>
 <header class="site-header">
   <div class="logo">PREVIAL</div>
-  <nav class="site-nav"> 
+  <nav class="site-nav">
     <a href="/particuliers">Particuliers</a>
     <a href="/professionnels">Professionnels</a>
   </nav>
@@ -18,6 +43,7 @@
 </header>
 
 {% block content %}{% endblock %}
+
 <footer style="border-top:1px solid #DDE3EA; padding:18px 24px; text-align:center; font-size:13px;">
   <a href="/mentions-legales">Mentions légales</a> ·
   <a href="/confidentialite">Politique de confidentialité</a> ·
@@ -52,6 +78,46 @@
   fermer.addEventListener('click', () => {
     panneau.classList.remove('ouvert');
   });
+
+  (function () {
+    function demarrer(bouton) {
+      if (bouton.classList.contains('charge')) return;
+      bouton.classList.add('charge');
+      bouton.setAttribute('aria-busy', 'true');
+    }
+    function arreter(bouton) {
+      bouton.classList.remove('charge');
+      bouton.removeAttribute('aria-busy');
+    }
+
+    document.addEventListener('submit', function (e) {
+      if (e.defaultPrevented) return;
+      var formulaire = e.target;
+      if (formulaire.dataset.envoi === '1') {
+        e.preventDefault();
+        return;
+      }
+      var bouton = e.submitter || formulaire.querySelector('button[type="submit"]');
+      formulaire.dataset.envoi = '1';
+      if (bouton) demarrer(bouton);
+    });
+
+    document.addEventListener('click', function (e) {
+      var lien = e.target.closest('a.btn-primary');
+      if (!lien) return;
+      var adresse = lien.getAttribute('href') || '';
+      if (adresse.charAt(0) === '#' || lien.target === '_blank' || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      demarrer(lien);
+      if (adresse.indexOf('export') !== -1) {
+        setTimeout(function () { arreter(lien); }, 4000);
+      }
+    });
+
+    window.addEventListener('pageshow', function () {
+      document.querySelectorAll('.charge').forEach(arreter);
+      document.querySelectorAll('form[data-envoi]').forEach(function (f) { delete f.dataset.envoi; });
+    });
+  })();
 </script>
 </body>
 </html>

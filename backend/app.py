@@ -37,6 +37,8 @@ configurer_mail(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "compte"
+
+
 @app.before_request
 def session_avec_expiration():
     session.permanent = True
@@ -47,6 +49,7 @@ def non_connecte():
     if request.path.startswith("/equipe"):
         return redirect("/equipe")
     return redirect("/compte")
+
 
 STATUTS = [
     ("nouveau", "Nouveau"),
@@ -89,11 +92,16 @@ TYPES_AUTORISES = {
 }
 TAILLE_MAX_FICHIER = 10 * 1024 * 1024
 ROLES_EQUIPE = ("admin", "gestionnaire")
-DUREE_CONSERVATION_MOIS =36 
+DUREE_CONSERVATION_MOIS = 36
+CRENEAUX = [f"{h}h30 - {h + 1}h30" for h in range(9, 17)]
+
 
 @app.context_processor
 def droits_pour_templates():
-    return {"est_admin": current_user.is_authenticated and current_user.role == "admin"}
+    return {
+        "est_admin": current_user.is_authenticated and current_user.role == "admin",
+        "creneaux": CRENEAUX
+    }
 
 
 @app.template_filter("heure_paris")
@@ -353,7 +361,7 @@ def valider_formulaire(reponses):
         erreurs.append("Besoin invalide.")
     if reponses["moyen_contact_prefere"] not in ("Téléphone", "E-mail"):
         erreurs.append("Moyen de contact invalide.")
-    if reponses["creneau_souhaite"] not in ("Matin", "Après-midi", "Soir", "", None):
+    if reponses["creneau_souhaite"] not in CRENEAUX + ["", None]:
         erreurs.append("Créneau invalide.")
 
     if len(reponses["nom"]) > 100 or len(reponses["prenom"]) > 100 or len(reponses["ville"]) > 100:
@@ -467,6 +475,7 @@ def confidentialite():
 def cookies():
     return render_template("page_legale.html", titre="Gestion des cookies", page="cookies")
 
+
 @app.route("/robots.txt")
 def robots_txt():
     contenu = (
@@ -485,7 +494,7 @@ def robots_txt():
 
 @app.route("/sitemap.xml")
 def sitemap_xml():
-    adresses = ["/", "/particuliers", "/professionnels", "/qui-sommes-nous", "/contact-info",
+    adresses = ["/", "/particuliers", "/professionnels", "/contact-info",
                 "/mentions-legales", "/confidentialite", "/cookies"]
     adresses += [f"/produits/{p.id}" for p in Produit.query.all()]
 
@@ -495,6 +504,7 @@ def sitemap_xml():
         lignes.append(f"  <url><loc>{request.host_url.rstrip('/')}{a}</loc></url>")
     lignes.append("</urlset>")
     return Response("\n".join(lignes), mimetype="application/xml")
+
 
 @app.route("/equipe", methods=["GET", "POST"])
 def equipe_connexion():
@@ -575,6 +585,26 @@ def equipe_journal_connexions():
     return render_template("equipe_journal_connexions.html", lignes=lignes)
 
 
+@app.route("/equipe/dossiers-a-examiner")
+@login_required
+def equipe_dossiers_a_examiner():
+    if current_user.role != "admin":
+        abort(404)
+
+    mois = request.args.get("mois", DUREE_CONSERVATION_MOIS, type=int)
+    mois = max(0, min(mois, 240))
+    limite = datetime.utcnow() - timedelta(days=30 * mois)
+
+    dossiers = Dossier.query.filter(Dossier.date_creation < limite).order_by(Dossier.date_creation.asc()).all()
+    return render_template(
+        "equipe_dossiers_a_examiner.html",
+        dossiers=dossiers,
+        mois=mois,
+        duree_par_defaut=DUREE_CONSERVATION_MOIS,
+        libelles=dict(STATUTS)
+    )
+
+
 def pieces_manquantes(ids):
     manquantes = {}
     if not ids:
@@ -602,24 +632,7 @@ def pieces_manquantes(ids):
             manquantes[dossier_id] = [libelle for valeur, libelle in PIECES if valeur in restantes]
 
     return manquantes
-@app.route("/equipe/dossiers-a-examiner")
-@login_required
-def equipe_dossiers_a_examiner():
-    if current_user.role != "admin":
-        abort(404)
 
-    mois = request.args.get("mois", DUREE_CONSERVATION_MOIS, type=int)
-    mois = max(0, min(mois, 240))
-    limite = datetime.utcnow() - timedelta(days=30 * mois)
-
-    dossiers = Dossier.query.filter(Dossier.date_creation < limite).order_by(Dossier.date_creation.asc()).all()
-    return render_template(
-        "equipe_dossiers_a_examiner.html",
-        dossiers=dossiers,
-        mois=mois,
-        duree_par_defaut=DUREE_CONSERVATION_MOIS,
-        libelles=dict(STATUTS)
-    )
 
 @app.route("/equipe/dossiers")
 @login_required
@@ -1399,6 +1412,8 @@ def equipe_restaurer_document(document_id):
         db.session.commit()
 
     return redirect(f"/equipe/dossiers/{document.dossier_id}")
+
+
 @app.route("/equipe/documents/<int:document_id>/supprimer-definitivement", methods=["POST"])
 @login_required
 def equipe_supprimer_definitivement(document_id):
@@ -1428,6 +1443,7 @@ def equipe_supprimer_definitivement(document_id):
     db.session.commit()
 
     return redirect(f"/equipe/dossiers/{dossier_id}")
+
 
 with app.app_context():
     db.create_all()
