@@ -2,31 +2,76 @@
 
 {% block title %}Prévial — {{ titre }}{% endblock %}
 
+{% block description %}{{ sous_titre }} PREVIAL, courtier en assurance : un conseiller compare pour vous les offres de ses partenaires.{% endblock %}
+
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='previal-pages.css') }}">
 
-{% set icones = {
-  "Multirisque professionnelle": "🏢",
-  "Responsabilité civile pro": "🛡️",
-  "Mutuelle TNS": "❤️",
-  "Prévoyance indépendant": "⚕️",
-  "Plan Épargne Retraite": "💰",
-  "Retraite complémentaire": "🌅"
+{% set images = {
+  "Mutuelle santé particuliers": "sante.jpg",
+  "Mutuelle santé seniors": "sante1.jpg",
+  "Mutuelle santé TNS": "sante-tns.jpg",
+  "Prévoyance TNS": "prevoyance-tns.jpg",
+  "Assurance emprunteur": "emprunteur.jpg",
+  "Plan Épargne Retraite": "retraite.jpg"
 } %}
+{% set est_espace = titre in ['Particuliers', 'Professionnels'] %}
+{% set nombre = produits|length %}
+{% set colonnes = 2 if nombre in [2, 4] else 3 %}
 
-<section class="liste-header">
-  <h1>{{ titre }}</h1>
-  <p>{{ sous_titre }}</p>
+<section class="pv-bandeau" aria-labelledby="titre-page">
+  <div class="acc-conteneur">
+    <nav class="pv-fil" aria-label="Fil d'Ariane">
+      <a href="/">Accueil</a><span aria-hidden="true">/</span>{{ titre }}
+    </nav>
+    <h1 id="titre-page">{{ titre }}</h1>
+    <p class="pv-bandeau-texte">{{ sous_titre }}</p>
+    {% if est_espace %}
+    <ul class="pv-onglets">
+      <li><a href="/particuliers"{% if titre == 'Particuliers' %} aria-current="page"{% endif %}>Particuliers</a></li>
+      <li><a href="/professionnels"{% if titre == 'Professionnels' %} aria-current="page"{% endif %}>Professionnels</a></li>
+    </ul>
+    {% endif %}
+  </div>
 </section>
 
-<div class="grid-products">
-  {% for produit in produits %}
-  <a href="/produits/{{ produit.id }}" class="product-card"></a>
-    <div class="product-icon">{{ icones.get(produit.nom, "📄") }}</div>
-    <h3>{{ produit.nom }}</h3>
-    <p>{{ produit.description }}</p>
-    <span class="product-cta">Découvrir</span>
-  </a>
-  {% endfor %}
-</div>
+<section class="pv-section" aria-labelledby="titre-produits">
+  <div class="acc-conteneur">
+    <h2 id="titre-produits">{% if est_espace %}Les produits {{ titre }}{% else %}Nos produits{% endif %}</h2>
+    <p class="pv-intro">Choisissez un produit pour en savoir plus. Un conseiller PREVIAL vous accompagne ensuite dans votre choix.</p>
 
+    {% if produits %}
+    <div class="pv-grille pv-grille-{{ colonnes }}">
+      {% for produit in produits %}
+      <article class="pv-produit">
+        <img class="pv-produit-photo" src="{{ url_for('static', filename=images.get(produit.nom, 'sante.jpg')) }}" alt="">
+        <div class="pv-produit-corps">
+          {% if produit.categorie %}<span class="pv-puce">{{ produit.categorie }}</span>{% endif %}
+          <h3>{{ produit.nom }}</h3>
+          <p>{{ produit.description }}</p>
+          <div class="pv-produit-action">
+            <a href="{% if vers_devis %}/produits/{{ produit.id }}/devis{% else %}/produits/{{ produit.id }}{% endif %}" class="acc-btn acc-btn-bleu" aria-label="Découvrir {{ produit.nom }}">Découvrir ce produit</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="pv-vide">Aucun produit n'est disponible pour le moment. Un conseiller PREVIAL peut quand même vous renseigner : utilisez le bouton « Être contacté » ci-dessous.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="pv-aide" aria-labelledby="titre-aide">
+  <h2 id="titre-aide">Vous hésitez ? Parlons-en</h2>
+  <p>Un conseiller PREVIAL vous rappelle au créneau de votre choix et vous aide à trouver la couverture qui vous convient.</p>
+  <div class="pv-aide-actions">
+    <a href="/#formulaire-contact" class="acc-btn acc-btn-bleu">Être contacté</a>
+    {% if titre == 'Particuliers' %}
+    <a href="/professionnels" class="acc-btn acc-btn-ligne">Voir les produits Professionnels</a>
+    {% elif titre == 'Professionnels' %}
+    <a href="/particuliers" class="acc-btn acc-btn-ligne">Voir les produits Particuliers</a>
+    {% endif %}
+  </div>
+</section>
 {% endblock %}

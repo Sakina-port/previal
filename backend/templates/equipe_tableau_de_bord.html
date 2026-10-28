@@ -3,88 +3,66 @@
 {% block title %}Prévial — Tableau de bord{% endblock %}
 
 {% block content %}
-<div class="equipe-wrap">
-  <div class="equipe-entete">
-    <div>
-      <h1>Bonjour {{ current_user.prenom }}</h1>
-      <p class="equipe-sous-titre">Tableau de bord de l'espace privé Prévial</p>
+<link rel="stylesheet" href="{{ url_for('static', filename='previal-equipe.css') }}">
+
+<div class="eq-fond">
+  <div class="eq-page">
+
+    <div class="eq-tete">
+      <div>
+        <h1>Bonjour {{ current_user.prenom }}</h1>
+        <p class="eq-sous-titre">Tableau de bord de l'espace équipe PREVIAL</p>
+      </div>
     </div>
-    <a href="/equipe/deconnexion" class="btn-primary equipe-deconnexion">Se déconnecter</a>
-  </div>
-{% include "_recherche_equipe.html" %}
-  <div class="equipe-compteurs">
-    {% for c in compteurs %}
-    <a href="/equipe/dossiers?statut={{ c.valeur }}" class="equipe-compteur">
-      <div class="equipe-compteur-nombre">{{ c.nombre }}</div>
-      <div class="equipe-compteur-libelle">{{ c.libelle }}</div>
-    </a>
-    {% endfor %}
-  </div>
+
+    {% include "_recherche_equipe.html" %}
+
+    <section class="eq-bloc" aria-labelledby="titre-statuts">
+      <h2 id="titre-statuts">Dossiers par statut</h2>
+      <p class="eq-aide">Cliquez sur un statut pour voir les dossiers correspondants. Les dossiers archivés ne sont pas comptés.</p>
+      <ul class="eq-compteurs">
+        {% for c in compteurs %}
+        <li>
+          <a href="/equipe/dossiers?statut={{ c.valeur }}" class="eq-compteur{% if c.nombre %} eq-compteur-actif{% endif %}">
+            <span class="eq-compteur-nombre">{{ c.nombre }}</span>
+            <span class="eq-compteur-libelle">{{ c.libelle }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
 
     {% set nb_retard = a_faire|selectattr('en_retard')|list|length %}
-  <h2 class="equipe-titre-section">
-    À faire aujourd'hui ({{ a_faire|length }})
-    {% if nb_retard %}<span style="color:#b42318;font-size:0.9rem;"> · dont {{ nb_retard }} en retard</span>{% endif %}
-  </h2>
-  {% if a_faire %}
-  <table class="equipe-table">
-    <thead>
-      <tr>
-        <th>Quand</th>
-        <th>À faire</th>
-        <th>Dossier</th>
-        <th>Nom</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in a_faire %}
-      {% set dos = item.dossier %}
-      <tr>
-        <td>
-          {% if item.en_retard %}<strong>En retard</strong><br>{% endif %}
-          {{ item.rappel.date_rappel|heure_paris }}
-        </td>
-        <td>{{ item.rappel.contenu }}</td>
-        <td><a href="/equipe/dossiers/{{ dos.id }}" class="equipe-lien-dossier">{{ dos.numero_dossier }}</a></td>
-        <td>{{ (dos.reponses or {}).get('prenom', '') }} {{ (dos.reponses or {}).get('nom', '') }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p class="equipe-vide">Rien à faire pour aujourd'hui.</p>
-  {% endif %}
+    <section class="eq-bloc" aria-labelledby="titre-a-faire">
+      <div class="eq-titre-ligne">
+        <h2 id="titre-a-faire">À faire aujourd'hui</h2>
+        <span class="eq-nombre">{{ a_faire|length }}</span>
+        {% if nb_retard %}<span class="eq-puce-retard" style="margin-bottom:0;">dont {{ nb_retard }} en retard</span>{% endif %}
+      </div>
 
-  <h2 class="equipe-titre-section">Dernières demandes</h2>
- 
-<a href="/equipe/dossiers" class="btn-primary" style="margin-bottom:16px;">Voir toutes les demandes</a>
-{% if est_admin %}<a href="/equipe/journal-connexions" class="btn-primary" style="margin-bottom:16px;">Journal des connexions</a>{% endif %}
-{% if est_admin %}<a href="/equipe/dossiers-a-examiner" class="btn-primary" style="margin-bottom:16px;">Dossiers à examiner</a>{% endif %}
-  {% if derniers_dossiers %}
-  <table class="equipe-table">
-    <thead>
-      <tr>
-        <th>Dossier</th>
-        <th>Nom</th>
-        <th>Besoin</th>
-        <th>Statut</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for d in derniers_dossiers %}
-      <tr>
-        <td>{{ d.numero_dossier }}</td>
-        <td>{{ (d.reponses or {}).get('prenom', '') }} {{ (d.reponses or {}).get('nom', '') }}</td>
-        <td>{{ (d.reponses or {}).get('besoin', '') }}</td>
-        <td>{{ d.statut }}</td>
-        <td>{{ d.date_creation|heure_paris("%d/%m/%Y") }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p class="equipe-vide">Aucune demande pour l'instant.</p>
-  {% endif %}
+      {% if a_faire %}
+      <ul class="eq-taches">
+        {% for item in a_faire %}
+        {% set dos = item.dossier %}
+        {% set r = dos.reponses or {} %}
+        <li class="eq-tache{% if item.en_retard %} eq-tache-retard{% endif %}">
+          <div class="eq-tache-quand">
+            {% if item.en_retard %}<span class="eq-puce-retard">En retard</span><br>{% endif %}
+            {{ item.rappel.date_rappel|heure_paris }}
+          </div>
+          <div class="eq-tache-texte">{{ item.rappel.contenu }}</div>
+          <div class="eq-tache-dossier">
+            <a href="/equipe/dossiers/{{ dos.id }}" class="eq-lien">{{ dos.numero_dossier }}</a>
+            <small>{{ r.get('prenom', '') }} {{ r.get('nom', '') }}</small>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="eq-vide">Rien à faire pour aujourd'hui.</p>
+      {% endif %}
+    </section>
+
+  </div>
 </div>
 {% endblock %}

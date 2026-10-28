@@ -3,40 +3,48 @@
 {% block title %}PREVIAL — Dossiers à examiner{% endblock %}
 
 {% block content %}
-<div class="equipe-wrap">
-  <div class="equipe-entete">
-    <div>
-      <h1>Dossiers à examiner</h1>
-      <p class="equipe-sous-titre">Dossiers créés il y a plus de {{ mois }} mois : {{ dossiers|length }}</p>
+<link rel="stylesheet" href="{{ url_for('static', filename='previal-equipe.css') }}">
+
+<div class="eq-fond">
+  <div class="eq-page">
+    <div class="eq-tete">
+      <div>
+        <h1>Dossiers à examiner</h1>
+        <p class="eq-sous-titre">Dossiers créés il y a plus de {{ mois }} mois : {{ dossiers|length }}</p>
+      </div>
     </div>
-    <a href="/equipe/tableau-de-bord" class="btn-primary equipe-deconnexion">Retour au tableau de bord</a>
-  </div>
 
-  <div style="background:#FFF4D6; border:1px solid #E8C55B; color:#6B4E00; padding:12px 14px; border-radius:6px; margin-bottom:20px;">
-    <strong>Durée provisoire : {{ duree_par_defaut }} mois.</strong>
-    La durée de conservation doit être fixée par la direction de PREVIAL. Aucun dossier n'est supprimé automatiquement.
-  </div>
+    <div class="eq-message eq-message-attention">
+      <strong>Durée provisoire : {{ duree_par_defaut }} mois.</strong>
+      La durée de conservation doit être fixée par la direction de PREVIAL. Aucun dossier n'est supprimé automatiquement.
+    </div>
 
-  {% if dossiers %}
-  <table class="equipe-table">
-    <thead>
-      <tr><th>Dossier</th><th>Nom</th><th>Statut</th><th>Créé le</th><th>Archivé</th></tr>
-    </thead>
-    <tbody>
-      {% for d in dossiers %}
-      {% set r = d.reponses or {} %}
-      <tr>
-        <td><a href="/equipe/dossiers/{{ d.id }}" class="equipe-lien-dossier">{{ d.numero_dossier }}</a></td>
-        <td>{{ r.get('prenom', '') }} {{ r.get('nom', '') }}</td>
-        <td>{{ libelles.get(d.statut, d.statut) }}</td>
-        <td>{{ d.date_creation|heure_paris("%d/%m/%Y") }}</td>
-        <td>{% if d.archive %}Oui{% else %}Non{% endif %}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p class="equipe-vide">Aucun dossier n'a dépassé cette durée.</p>
-  {% endif %}
+    <section class="eq-bloc" aria-labelledby="titre-examen">
+      <h2 id="titre-examen">Dossiers anciens</h2>
+      {% if dossiers %}
+      <div class="eq-tableau">
+        <table class="eq-table">
+          <thead>
+            <tr><th>Dossier</th><th>Nom</th><th>Statut</th><th>Créé le</th><th>Archivé</th></tr>
+          </thead>
+          <tbody>
+            {% for d in dossiers %}
+            {% set r = d.reponses or {} %}
+            <tr>
+              <td><a href="/equipe/dossiers/{{ d.id }}" class="eq-lien">{{ d.numero_dossier }}</a></td>
+              <td>{{ r.get('prenom', '') }} {{ r.get('nom', '') }}</td>
+              <td><span class="eq-badge">{{ libelles.get(d.statut, d.statut) }}</span></td>
+              <td>{{ d.date_creation|heure_paris("%d/%m/%Y") }}</td>
+              <td>{% if d.archive %}Oui{% else %}Non{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="eq-vide">Aucun dossier n'a dépassé cette durée.</p>
+      {% endif %}
+    </section>
+  </div>
 </div>
 {% endblock %}

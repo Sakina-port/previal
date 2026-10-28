@@ -19,11 +19,13 @@
   <p class="sous-titre">Document généré le {{ date_export|heure_paris }} (heure de Paris)</p>
 
   <h2>Informations transmises par la personne</h2>
-  {% set champs = [("Civilité","civilite"),("Nom","nom"),("Prénom","prenom"),("Téléphone","telephone"),("E-mail","email"),("Code postal","code_postal"),("Ville","ville"),("Profil","profil"),("Besoin","besoin"),("Moyen de contact préféré","moyen_contact_prefere"),("Créneau souhaité","creneau_souhaite"),("Commentaire","commentaire")] %}
+    {% set champs = [("Civilité","civilite"),("Nom","nom"),("Prénom","prenom"),("Téléphone","telephone"),("E-mail","email"),("Âge","age"),("Situation matrimoniale","situation_matrimoniale"),("Nombre d'enfants","nombre_enfants"),("Famille nombreuse","famille_nombreuse"),("Profil","profil"),("Besoin","besoin"),("Moyen de contact préféré","moyen_contact_prefere"),("Créneau souhaité","creneau_souhaite"),("Commentaire","commentaire")] %}
   <table>
     {% for libelle, cle in champs %}
-    <tr><th>{{ libelle }}</th><td>{{ reponses.get(cle) or "—" }}</td></tr>
+    <tr><th>{{ libelle }}</th><td>{{ reponses.get(cle) if reponses.get(cle) is not none and reponses.get(cle) != '' else "—" }}</td></tr>
     {% endfor %}
+    {% if reponses.get('code_postal') %}<tr><th>Code postal</th><td>{{ reponses.get('code_postal') }}</td></tr>{% endif %}
+    {% if reponses.get('ville') %}<tr><th>Ville</th><td>{{ reponses.get('ville') }}</td></tr>{% endif %}
   </table>
 
   <h2>Consentement</h2>

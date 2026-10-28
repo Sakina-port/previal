@@ -3,134 +3,163 @@
 {% block title %}PREVIAL — Dossiers{% endblock %}
 
 {% block content %}
-<div class="equipe-wrap equipe-wrap-large">
-  <div class="equipe-entete">
-    <div>
-      <h1>Toutes les demandes</h1>
-      <p class="equipe-sous-titre">{{ dossiers.total }} dossier(s)</p>
+<link rel="stylesheet" href="{{ url_for('static', filename='previal-equipe.css') }}">
+
+{% set p = {} %}
+{% if q %}{% set _ = p.update({'q': q}) %}{% endif %}
+{% if statut_filtre %}{% set _ = p.update({'statut': statut_filtre}) %}{% endif %}
+{% if profil_filtre %}{% set _ = p.update({'profil': profil_filtre}) %}{% endif %}
+{% if produit_filtre %}{% set _ = p.update({'produit': produit_filtre}) %}{% endif %}
+{% if partenaire_filtre %}{% set _ = p.update({'partenaire': partenaire_filtre}) %}{% endif %}
+{% if archives %}{% set _ = p.update({'archives': archives}) %}{% endif %}
+{% if tri and tri != 'recent' %}{% set _ = p.update({'tri': tri}) %}{% endif %}
+{% if du %}{% set _ = p.update({'du': du}) %}{% endif %}
+{% if au %}{% set _ = p.update({'au': au}) %}{% endif %}
+
+<div class="eq-fond">
+  <div class="eq-page">
+
+    <div class="eq-tete">
+      <div>
+        <h1>Dossiers</h1>
+        <p class="eq-sous-titre">{{ dossiers.total }} dossier{% if dossiers.total > 1 %}s{% endif %} {% if archives == '1' %}archivé{% if dossiers.total > 1 %}s{% endif %}{% else %}en cours{% endif %}</p>
+      </div>
+      {% if est_admin %}
+      <div class="eq-actions-tete">
+        <a href="/equipe/dossiers/export.csv?{{ p|urlencode }}" class="eq-btn eq-btn-secondaire">Exporter en CSV</a>
+      </div>
+      {% endif %}
     </div>
-    <a href="/equipe/tableau-de-bord" class="btn-primary equipe-deconnexion">Retour au tableau de bord</a>
-  </div>
 
-  <form method="GET" action="/equipe/dossiers" class="equipe-filtres">
-    <input type="text" name="q" value="{{ q }}" placeholder="Nom, prénom, e-mail, téléphone ou n° de dossier">
+    <form method="GET" action="/equipe/dossiers" class="eq-bloc" aria-label="Rechercher et filtrer les dossiers">
+      <div class="eq-filtres-grille">
+        <div class="eq-champ">
+          <label for="f-q">Recherche</label>
+          <input id="f-q" type="search" name="q" value="{{ q or '' }}" placeholder="Nom, e-mail, téléphone, n° de dossier">
+        </div>
+        <div class="eq-champ">
+          <label for="f-statut">Statut</label>
+          <select id="f-statut" name="statut">
+            <option value="">Tous les statuts</option>
+            {% for valeur, libelle in statuts %}
+            <option value="{{ valeur }}"{% if valeur == statut_filtre %} selected{% endif %}>{{ libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="eq-champ">
+          <label for="f-profil">Profil</label>
+          <select id="f-profil" name="profil">
+            <option value="">Tous les profils</option>
+            {% for v in ['Particulier', 'TNS', 'Entreprise'] %}
+            <option value="{{ v }}"{% if v == profil_filtre %} selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="eq-champ">
+          <label for="f-produit">Besoin</label>
+          <select id="f-produit" name="produit">
+            <option value="">Tous les besoins</option>
+            {% for v in ['Santé', 'Prévoyance', 'Santé + Prévoyance', 'Autre'] %}
+            <option value="{{ v }}"{% if v == produit_filtre %} selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="eq-champ">
+          <label for="f-partenaire">Partenaire interrogé</label>
+          <select id="f-partenaire" name="partenaire">
+            <option value="">Tous les partenaires</option>
+            {% for v in partenaires %}
+            <option value="{{ v }}"{% if v == partenaire_filtre %} selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="eq-champ">
+          <label for="f-archives">Dossiers</label>
+          <select id="f-archives" name="archives">
+            <option value="">En cours</option>
+            <option value="1"{% if archives == '1' %} selected{% endif %}>Archivés</option>
+          </select>
+        </div>
+        <div class="eq-champ">
+          <label for="f-du">Créés à partir du</label>
+          <input id="f-du" type="date" name="du" value="{{ du or '' }}">
+        </div>
+        <div class="eq-champ">
+          <label for="f-au">Créés jusqu'au</label>
+          <input id="f-au" type="date" name="au" value="{{ au or '' }}">
+        </div>
+        <div class="eq-champ">
+          <label for="f-tri">Trier par</label>
+          <select id="f-tri" name="tri">
+            {% for valeur, libelle in [('recent', 'Plus récents'), ('ancien', 'Plus anciens'), ('nom', 'Nom'), ('prenom', 'Prénom'), ('email', 'E-mail'), ('statut', 'Statut')] %}
+            <option value="{{ valeur }}"{% if valeur == tri %} selected{% endif %}>{{ libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="eq-actions-ligne">
+        <button type="submit" class="eq-btn">Appliquer</button>
+        <a href="/equipe/dossiers" class="eq-btn eq-btn-secondaire">Réinitialiser</a>
+      </div>
+    </form>
 
-    <select name="statut">
-      <option value="">Tous les statuts</option>
-      {% for valeur, libelle in statuts %}
-      <option value="{{ valeur }}" {% if valeur == statut_filtre %}selected{% endif %}>{{ libelle }}</option>
-      {% endfor %}
-    </select>
+    <section class="eq-bloc" aria-labelledby="titre-liste">
+      <h2 id="titre-liste" class="eq-aide" style="margin:0 0 14px; font-size:1.3rem; color:var(--acc-navy); font-weight:700;">Résultats</h2>
 
-    <select name="profil">
-      <option value="">Tous les profils</option>
-      {% for p in ["Particulier", "TNS", "Entreprise"] %}
-      <option value="{{ p }}" {% if p == profil_filtre %}selected{% endif %}>{{ p }}</option>
-      {% endfor %}
-    </select>
+      {% if dossiers.items %}
+      <div class="eq-tableau">
+        <table class="eq-table">
+          <thead>
+            <tr>
+              <th>Dossier</th>
+              <th>Nom</th>
+              <th>Besoin</th>
+              <th>Statut</th>
+              <th>Créé le</th>
+              <th>Dernière action</th>
+              <th>Pièces</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in dossiers.items %}
+            {% set r = d.reponses or {} %}
+            {% set h = dernieres.get(d.id) %}
+            {% set m = manquantes.get(d.id) %}
+            <tr>
+              <td>
+                <a href="/equipe/dossiers/{{ d.id }}" class="eq-lien">{{ d.numero_dossier }}</a>
+                {% if d.archive %}<small>Archivé</small>{% endif %}
+              </td>
+              <td>{{ r.get('prenom', '') }} {{ r.get('nom', '') }}<small>{{ r.get('email', '') }}</small></td>
+              <td>{{ r.get('besoin', '') }}</td>
+              <td><span class="eq-badge">{{ libelles.get(d.statut, d.statut) }}</span></td>
+              <td>{{ d.date_creation|heure_paris("%d/%m/%Y") }}</td>
+              <td>{% if h %}{{ h.action }}<small>{{ h.date_creation|heure_paris }}</small>{% else %}—{% endif %}</td>
+              <td>{% if m %}<span class="eq-badge eq-badge-alerte">Manquantes : {{ m|join(', ') }}</span>{% else %}—{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
 
-    <select name="produit">
-      <option value="">Tous les produits</option>
-      {% for b in ["Santé", "Prévoyance", "Santé + Prévoyance", "Autre"] %}
-      <option value="{{ b }}" {% if b == produit_filtre %}selected{% endif %}>{{ b }}</option>
-      {% endfor %}
-    </select>
-
-    <select name="partenaire">
-      <option value="">Tous les partenaires</option>
-      {% for p in partenaires %}
-      <option value="{{ p }}" {% if p == partenaire_filtre %}selected{% endif %}>{{ p }}</option>
-      {% endfor %}
-    </select>
-
-    <select name="archives">
-      <option value="" {% if archives != "1" %}selected{% endif %}>Dossiers en cours</option>
-      <option value="1" {% if archives == "1" %}selected{% endif %}>Dossiers archivés</option>
-    </select>
-
-    <select name="tri">
-      <option value="recent" {% if tri == "recent" %}selected{% endif %}>Plus récents d'abord</option>
-      <option value="ancien" {% if tri == "ancien" %}selected{% endif %}>Plus anciens d'abord</option>
-      <option value="nom" {% if tri == "nom" %}selected{% endif %}>Nom (A à Z)</option>
-      <option value="prenom" {% if tri == "prenom" %}selected{% endif %}>Prénom (A à Z)</option>
-      <option value="email" {% if tri == "email" %}selected{% endif %}>E-mail (A à Z)</option>
-      <option value="statut" {% if tri == "statut" %}selected{% endif %}>Statut</option>
-    </select>
-
-    <label class="equipe-date">Du
-      <input type="date" name="du" value="{{ du }}">
-    </label>
-
-    <label class="equipe-date">Au
-      <input type="date" name="au" value="{{ au }}">
-    </label>
-
-    <button type="submit" class="btn-primary">Rechercher</button>
-    <a href="/equipe/dossiers" class="equipe-reset">Réinitialiser</a>
-    <a href="/equipe/dossiers/export.csv?q={{ q|urlencode }}&statut={{ statut_filtre|urlencode }}&profil={{ profil_filtre|urlencode }}&produit={{ produit_filtre|urlencode }}&partenaire={{ partenaire_filtre|urlencode }}&archives={{ archives|urlencode }}&du={{ du|urlencode }}&au={{ au|urlencode }}" class="equipe-reset">Exporter en CSV</a>
-  </form>
-
-  {% if dossiers.items %}
-  <table class="equipe-table">
-    <thead>
-      <tr>
-        <th>Dossier</th>
-        <th>Nom</th>
-        <th>Prénom</th>
-        <th>Téléphone</th>
-        <th>E-mail</th>
-        <th>Besoin</th>
-        <th>Statut</th>
-        <th>Pièces</th>
-        <th>Date</th>
-        <th>Dernière action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for d in dossiers.items %}
-      {% set r = d.reponses or {} %}
-      {% set derniere = dernieres.get(d.id) %}
-      {% set manque = manquantes.get(d.id) %}
-      <tr>
-        <td><a href="/equipe/dossiers/{{ d.id }}" class="equipe-lien-dossier">{{ d.numero_dossier }}</a></td>
-        <td>{{ r.get('nom', '') }}</td>
-        <td>{{ r.get('prenom', '') }}</td>
-        <td>{{ r.get('telephone', '') }}</td>
-        <td>{{ r.get('email', '') }}</td>
-        <td>{{ r.get('besoin', '') }}</td>
-        <td>{{ libelles.get(d.statut, d.statut) }}</td>
-        <td>
-          {% if manque %}
-            <span style="color:#b42318;">Manque : {{ manque|join(', ') }}</span>
-          {% else %}
-            —
+      <div class="eq-pagination">
+        <span>Page {{ dossiers.page }} sur {{ dossiers.pages or 1 }}</span>
+        <span class="eq-actions-ligne" style="margin:0;">
+          {% if dossiers.has_prev %}
+          {% set p2 = p.copy() %}{% set _ = p2.update({'page': dossiers.prev_num}) %}
+          <a href="/equipe/dossiers?{{ p2|urlencode }}" class="eq-btn eq-btn-secondaire eq-btn-petit">Précédent</a>
           {% endif %}
-        </td>
-        <td>{{ d.date_creation|heure_paris("%d/%m/%Y") }}</td>
-        <td>
-          {% if derniere %}
-            {{ derniere.action }}<br>
-            <small>{{ derniere.date_creation|heure_paris }}</small>
-          {% else %}
-            —
+          {% if dossiers.has_next %}
+          {% set p3 = p.copy() %}{% set _ = p3.update({'page': dossiers.next_num}) %}
+          <a href="/equipe/dossiers?{{ p3|urlencode }}" class="eq-btn eq-btn-secondaire eq-btn-petit">Suivant</a>
           {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        </span>
+      </div>
+      {% else %}
+      <p class="eq-vide">Aucun dossier ne correspond à votre recherche.</p>
+      {% endif %}
+    </section>
 
-  <div class="equipe-pagination">
-    {% if dossiers.has_prev %}
-    <a href="/equipe/dossiers?page={{ dossiers.prev_num }}&q={{ q|urlencode }}&statut={{ statut_filtre|urlencode }}&profil={{ profil_filtre|urlencode }}&produit={{ produit_filtre|urlencode }}&partenaire={{ partenaire_filtre|urlencode }}&archives={{ archives|urlencode }}&tri={{ tri|urlencode }}&du={{ du|urlencode }}&au={{ au|urlencode }}">← Précédent</a>
-    {% endif %}
-    <span>Page {{ dossiers.page }} sur {{ dossiers.pages }}</span>
-    {% if dossiers.has_next %}
-    <a href="/equipe/dossiers?page={{ dossiers.next_num }}&q={{ q|urlencode }}&statut={{ statut_filtre|urlencode }}&profil={{ profil_filtre|urlencode }}&produit={{ produit_filtre|urlencode }}&partenaire={{ partenaire_filtre|urlencode }}&archives={{ archives|urlencode }}&tri={{ tri|urlencode }}&du={{ du|urlencode }}&au={{ au|urlencode }}">Suivant →</a>
-    {% endif %}
   </div>
-  {% else %}
-  <p class="equipe-vide">Aucun dossier ne correspond à ces critères.</p>
-  {% endif %}
 </div>
 {% endblock %}

@@ -7,48 +7,89 @@
   <title>{% block title %}Prévial{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .charge {
-      cursor: progress;
-      pointer-events: none;
-      opacity: 0.85;
-    }
-    .charge::after {
-      content: "";
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      margin-left: 8px;
-      border: 2px solid currentColor;
-      border-right-color: transparent;
-      border-radius: 50%;
-      vertical-align: -2px;
-      animation: rotation-bouton 0.7s linear infinite;
-    }
-    @keyframes rotation-bouton {
-      to { transform: rotate(360deg); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .charge::after { animation-duration: 1.8s; }
-    }
+    @font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 400; font-display: swap; src: url("{{ url_for('static', filename='fonts/SourceSans3-400.woff2') }}") format("woff2"); }
+    @font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 600; font-display: swap; src: url("{{ url_for('static', filename='fonts/SourceSans3-600.woff2') }}") format("woff2"); }
+    @font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 700; font-display: swap; src: url("{{ url_for('static', filename='fonts/SourceSans3-700.woff2') }}") format("woff2"); }
+    @font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 800; font-display: swap; src: url("{{ url_for('static', filename='fonts/SourceSans3-800.woff2') }}") format("woff2"); }
+    body { font-family: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+    input, select, textarea, button { font-family: inherit; }
+
+    .charge { cursor: progress; pointer-events: none; opacity: 0.85; }
+    .charge::after { content: ""; display: inline-block; width: 14px; height: 14px; margin-left: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -2px; animation: rotation-bouton 0.7s linear infinite; }
+    @keyframes rotation-bouton { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .charge::after { animation-duration: 1.8s; } }
+
+    .pv-entete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; padding: 18px 48px; background: #FFFFFF; border-bottom: 1px solid #D5DEE7; }
+    .pv-marque { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+    .pv-logo { font-size: 22px; font-weight: 800; letter-spacing: 0.02em; color: #12304D; text-decoration: none; }
+    .pv-etiquette { padding: 4px 12px; border-radius: 999px; background: #EEF4F9; color: #12304D; font-size: 13px; font-weight: 700; }
+    .pv-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 28px; font-size: 16px; font-weight: 600; }
+    .pv-nav a { padding: 4px 0; border-bottom: 2px solid transparent; color: #12304D; text-decoration: none; }
+    .pv-nav a:hover, .pv-nav a[aria-current="page"] { border-bottom-color: #5EC2E8; }
+    .pv-nav a:focus-visible, .pv-logo:focus-visible { outline: 3px solid #1E6FB8; outline-offset: 3px; }
+    .pv-nav a.pv-nav-bouton { padding: 8px 18px; border: 2px solid #1E6FB8; border-radius: 999px; color: #1E6FB8; }
+    .pv-nav a.pv-nav-bouton:hover { background: #1E6FB8; color: #FFFFFF; }
+    @media (max-width: 700px) { .pv-entete { padding: 14px 20px; } }
+
+    .pied-site { background: #12304D; color: #D6E4F0; padding: 48px 24px; font-size: 15px; line-height: 1.7; }
+    .pied-contenu { max-width: 1120px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 28px 48px; }
+    .pied-logo { margin-bottom: 8px; line-height: 1.2; font-size: 22px; font-weight: 800; letter-spacing: 0.02em; color: #FFFFFF; }
+    .pied-nav { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 28px; }
+    .pied-site a { color: #D6E4F0; text-decoration: none; }
+    .pied-site a:hover { text-decoration: underline; }
+    .pied-site a:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 3px; }
   </style>
 </head>
 <body>
-<header class="site-header">
-  <div class="logo">PREVIAL</div>
-  <nav class="site-nav">
-    <a href="/particuliers">Particuliers</a>
-    <a href="/professionnels">Professionnels</a>
+{% set chemin = request.path %}
+{% if chemin.startswith('/equipe') %}
+<header class="pv-entete">
+  <div class="pv-marque">
+    <a href="/equipe/tableau-de-bord" class="pv-logo">PREVIAL</a>
+    <span class="pv-etiquette">Espace équipe</span>
+  </div>
+  {% if current_user.is_authenticated %}
+  <nav class="pv-nav" aria-label="Navigation de l'espace équipe">
+    <a href="/equipe/tableau-de-bord"{% if chemin == '/equipe/tableau-de-bord' %} aria-current="page"{% endif %}>Tableau de bord</a>
+    <a href="/equipe/dossiers"{% if chemin.startswith('/equipe/dossiers') and chemin != '/equipe/dossiers-a-examiner' %} aria-current="page"{% endif %}>Dossiers</a>
+    {% if est_admin %}
+    <a href="/equipe/journal-connexions"{% if chemin == '/equipe/journal-connexions' %} aria-current="page"{% endif %}>Journal</a>
+    <a href="/equipe/dossiers-a-examiner"{% if chemin == '/equipe/dossiers-a-examiner' %} aria-current="page"{% endif %}>À examiner</a>
+    {% endif %}
+    <a href="/equipe/deconnexion" class="pv-nav-bouton">Se déconnecter</a>
   </nav>
-  <a href="/compte" class="btn-espace-client">Espace Client</a>
+  {% endif %}
 </header>
+{% else %}
+<header class="pv-entete">
+  <a href="/" class="pv-logo" aria-label="PREVIAL, accueil">PREVIAL</a>
+  <nav class="pv-nav" aria-label="Navigation principale">
+    <a href="/particuliers"{% if chemin == '/particuliers' %} aria-current="page"{% endif %}>Particuliers</a>
+    <a href="/professionnels"{% if chemin == '/professionnels' %} aria-current="page"{% endif %}>Professionnels</a>
+    <a href="/#qui">Qui sommes-nous</a>
+    <a href="/#formulaire-contact">Contact</a>
+    {% if afficher_espace_client %}
+    <a href="/compte" class="pv-nav-bouton">Espace Client</a>
+    {% endif %}
+  </nav>
+</header>
+{% endif %}
 
 {% block content %}{% endblock %}
 
-<footer style="border-top:1px solid #DDE3EA; padding:18px 24px; text-align:center; font-size:13px;">
-  <a href="/mentions-legales">Mentions légales</a> ·
-  <a href="/confidentialite">Politique de confidentialité</a> ·
-  <a href="/cookies">Cookies</a> ·
-  <a href="/contact-info">Contact</a>
+<footer class="pied-site">
+  <div class="pied-contenu">
+    <div>
+      <div class="pied-logo">PREVIAL</div>
+      <div>contact@previal.fr<br>01 23 45 67 89</div>
+    </div>
+    <nav class="pied-nav" aria-label="Informations légales">
+      <a href="/mentions-legales">Mentions légales</a>
+      <a href="/confidentialite">Politique de confidentialité</a>
+      <a href="/cookies">Cookies</a>
+      <a href="/contact-info">Contact</a>
+    </nav>
+  </div>
 </footer>
 
 <div class="chatbot-bulle" id="chatbot-bulle">💬</div>
@@ -103,7 +144,7 @@
     });
 
     document.addEventListener('click', function (e) {
-      var lien = e.target.closest('a.btn-primary');
+      var lien = e.target.closest('a.btn-primary, a.eq-btn');
       if (!lien) return;
       var adresse = lien.getAttribute('href') || '';
       if (adresse.charAt(0) === '#' || lien.target === '_blank' || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;

@@ -1,4 +1,8 @@
-<form method="GET" action="/equipe/dossiers" class="equipe-filtres" style="margin-bottom:16px;">
-  <input type="text" name="q" placeholder="Rechercher : nom, prénom, e-mail, téléphone ou n° de dossier" style="min-width:320px;">
-  <button type="submit" class="btn-primary">Rechercher</button>
+<link rel="stylesheet" href="{{ url_for('static', filename='previal-equipe.css') }}">
+<form method="GET" action="/equipe/dossiers" class="eq-bloc eq-recherche" role="search">
+  <div class="eq-champ eq-champ-large">
+    <label for="eq-recherche-q">Rechercher un dossier</label>
+    <input id="eq-recherche-q" type="search" name="q" value="{{ q or '' }}" placeholder="Nom, prénom, e-mail, téléphone ou n° de dossier">
+  </div>
+  <button type="submit" class="eq-btn">Rechercher</button>
 </form>

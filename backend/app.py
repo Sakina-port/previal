@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, abort, Response, session
+from flask import Flask, render_template, request, redirect, abort, Response, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
@@ -74,6 +74,7 @@ PIECES = [
 ]
 
 PARTENAIRES = ["SPVIE", "Kereis", "Autre"]
+CATEGORIES_DEVIS = {f"devis_{p.lower()}": f"Devis {p}" for p in PARTENAIRES}
 
 ETATS_ETUDE = [
     ("a_interroger", "À interroger"),
@@ -94,13 +95,19 @@ TAILLE_MAX_FICHIER = 10 * 1024 * 1024
 ROLES_EQUIPE = ("admin", "gestionnaire")
 DUREE_CONSERVATION_MOIS = 36
 CRENEAUX = [f"{h}h30 - {h + 1}h30" for h in range(9, 17)]
+SITUATIONS = ["Célibataire", "Marié(e)", "Pacsé(e)", "Union libre", "Divorcé(e)", "Veuf(ve)"]
+CATEGORIES_PARTICULIERS = ["Santé", "Retraite", "Emprunteur"]
+CATEGORIES_PROFESSIONNELS = ["Santé TNS", "Prévoyance TNS", "Emprunteur"]
+AFFICHER_ESPACE_CLIENT = os.getenv('AFFICHER_ESPACE_CLIENT', 'False') == 'True'
 
 
 @app.context_processor
 def droits_pour_templates():
     return {
         "est_admin": current_user.is_authenticated and current_user.role == "admin",
-        "creneaux": CRENEAUX
+        "creneaux": CRENEAUX,
+        "situations": SITUATIONS,
+        "afficher_espace_client": AFFICHER_ESPACE_CLIENT
     }
 
 
@@ -142,7 +149,7 @@ def devis_choix():
 
 @app.route("/particuliers")
 def page_particuliers():
-    produits = Produit.query.all()
+    produits = Produit.query.filter(Produit.categorie.in_(CATEGORIES_PARTICULIERS)).all()
     return render_template(
         "liste_produits.html",
         produits=produits,
@@ -154,7 +161,7 @@ def page_particuliers():
 
 @app.route("/professionnels")
 def page_professionnels():
-    produits = Produit.query.all()
+    produits = Produit.query.filter(Produit.categorie.in_(CATEGORIES_PROFESSIONNELS)).all()
     return render_template(
         "liste_produits.html",
         produits=produits,
@@ -287,6 +294,8 @@ def signature(dossier_id):
 
 @app.route("/compte", methods=["GET", "POST"])
 def compte():
+    if not AFFICHER_ESPACE_CLIENT:
+        abort(404)
     if request.method == "POST":
         email = request.form.get("email")
         mot_de_passe_tape = request.form.get("mot_de_passe")
@@ -304,6 +313,8 @@ def compte():
 
 @app.route("/inscription", methods=["POST"])
 def inscription():
+    if not AFFICHER_ESPACE_CLIENT:
+        abort(404)
     nom = request.form.get("nom")
     prenom = request.form.get("prenom")
     email = request.form.get("email")
@@ -331,6 +342,8 @@ def inscription():
 @app.route("/espace-client")
 @login_required
 def espace_client():
+    if not AFFICHER_ESPACE_CLIENT:
+       abort(404)
     return render_template("espace_client.html")
 
 
@@ -363,16 +376,40 @@ def valider_formulaire(reponses):
         erreurs.append("Moyen de contact invalide.")
     if reponses["creneau_souhaite"] not in CRENEAUX + ["", None]:
         erreurs.append("Créneau invalide.")
+    if reponses["situation_matrimoniale"] not in SITUATIONS:
+        erreurs.append("Situation matrimoniale invalide.")
 
-    if len(reponses["nom"]) > 100 or len(reponses["prenom"]) > 100 or len(reponses["ville"]) > 100:
-        erreurs.append("Le nom, le prénom et la ville ne doivent pas dépasser 100 caractères.")
+    try:
+        age = int(reponses["age"])
+        if not 18 <= age <= 99:
+            raise ValueError
+        reponses["age"] = age
+    except (TypeError, ValueError):
+        erreurs.append("L'âge doit être compris entre 18 et 99 ans.")
+
+    nombre_enfants = None
+    try:
+        nombre_enfants = int(reponses["nombre_enfants"])
+        if not 0 <= nombre_enfants <= 15:
+            raise ValueError
+        reponses["nombre_enfants"] = nombre_enfants
+    except (TypeError, ValueError):
+        nombre_enfants = None
+        erreurs.append("Le nombre d'enfants doit être compris entre 0 et 15.")
+
+    if nombre_enfants is not None:
+        if nombre_enfants >= 3:
+            if reponses["famille_nombreuse"] not in ("Oui", "Non"):
+                erreurs.append("Merci d'indiquer si vous êtes une famille nombreuse.")
+        else:
+            reponses["famille_nombreuse"] = ""
+
+    if len(reponses["nom"]) > 100 or len(reponses["prenom"]) > 100:
+        erreurs.append("Le nom et le prénom ne doivent pas dépasser 100 caractères.")
 
     telephone = re.sub(r"[ .\-()]", "", reponses["telephone"])
     if not re.fullmatch(r"\+?\d{8,15}", telephone):
         erreurs.append("Le numéro de téléphone n'est pas valide.")
-
-    if not re.fullmatch(r"\d{5}", reponses["code_postal"]):
-        erreurs.append("Le code postal doit contenir 5 chiffres.")
 
     email = reponses["email"]
     if len(email) > 200 or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
@@ -392,8 +429,10 @@ def contact():
         "prenom": request.form.get("prenom"),
         "telephone": request.form.get("telephone"),
         "email": request.form.get("email"),
-        "code_postal": request.form.get("code_postal"),
-        "ville": request.form.get("ville"),
+        "age": request.form.get("age"),
+        "situation_matrimoniale": request.form.get("situation_matrimoniale"),
+        "nombre_enfants": request.form.get("nombre_enfants"),
+        "famille_nombreuse": request.form.get("famille_nombreuse"),
         "profil": request.form.get("profil"),
         "besoin": request.form.get("besoin"),
         "moyen_contact_prefere": request.form.get("moyen_contact_prefere"),
@@ -401,7 +440,8 @@ def contact():
         "commentaire": request.form.get("commentaire"),
     }
 
-    champs_obligatoires = ["civilite", "nom", "prenom", "telephone", "email", "code_postal", "ville", "profil", "besoin"]
+    champs_obligatoires = ["civilite", "nom", "prenom", "telephone", "email", "age",
+                           "situation_matrimoniale", "nombre_enfants", "profil", "besoin"]
     consentement = request.form.get("rgpd") == "on"
     texte_consentement = "J'accepte que mes données soient utilisées par Prévial pour traiter ma demande."
     champ_manquant = False
@@ -904,7 +944,8 @@ def equipe_fiche_dossier(dossier_id):
         notes=notes,
         demandes=demandes,
         pieces=PIECES,
-        libelles_pieces=dict(PIECES),
+        libelles_pieces={**dict(PIECES), **CATEGORIES_DEVIS},
+        categories_devis=CATEGORIES_DEVIS,
         documents=documents,
         supprimes=supprimes,
         rappels=rappels,
@@ -967,7 +1008,7 @@ def pdf_dossier(dossier):
         reponses=dossier.reponses or {},
         historique=historique,
         documents=documents,
-        libelles_pieces=dict(PIECES),
+        libelles_pieces={**dict(PIECES), **CATEGORIES_DEVIS},
         date_export=datetime.utcnow()
     )
     return HTML(string=html).write_pdf()
@@ -1021,6 +1062,11 @@ def equipe_changer_statut(dossier_id):
             action=f"Statut changé de « {libelles.get(ancien_statut, ancien_statut)} » à « {libelles[nouveau_statut]} »"
         ))
         db.session.commit()
+        flash(f"Statut enregistré avec succès : « {libelles[nouveau_statut]} ».", "succes")
+    elif nouveau_statut == dossier.statut:
+        flash("Ce statut est déjà celui du dossier : rien n'a été modifié.", "info")
+    else:
+        flash("Statut invalide : rien n'a été enregistré.", "erreur")
 
     return redirect(f"/equipe/dossiers/{dossier.id}")
 
@@ -1372,6 +1418,77 @@ def equipe_telecharger_document(document_id):
         mimetype=document.type_reel,
         headers={"Content-Disposition": "inline; filename=" + document.nom_stocke}
     )
+
+
+@app.route("/equipe/dossiers/<int:dossier_id>/devis-assureur", methods=["POST"])
+@login_required
+def equipe_ajouter_devis_assureur(dossier_id):
+    if current_user.role != "admin":
+        abort(404)
+
+    dossier = Dossier.query.get_or_404(dossier_id)
+    retour = f"/equipe/dossiers/{dossier.id}"
+    categorie = request.form.get("categorie", "")
+    fichier = request.files.get("fichier")
+
+    if categorie not in CATEGORIES_DEVIS:
+        flash("Assureur invalide : rien n'a été enregistré.", "erreur")
+        return redirect(retour)
+    if fichier is None or fichier.filename == "":
+        flash("Aucun fichier sélectionné.", "erreur")
+        return redirect(retour)
+
+    contenu = fichier.read()
+    if len(contenu) == 0:
+        flash("Le fichier est vide.", "erreur")
+        return redirect(retour)
+    if len(contenu) > TAILLE_MAX_FICHIER:
+        flash("Le fichier dépasse 10 Mo.", "erreur")
+        return redirect(retour)
+
+    type_detecte = filetype.guess(contenu)
+    if type_detecte is None or type_detecte.mime not in TYPES_AUTORISES:
+        flash("Format non accepté : seuls les PDF, JPG et PNG sont autorisés.", "erreur")
+        return redirect(retour)
+
+    nom_stocke = f"{uuid.uuid4().hex}.{TYPES_AUTORISES[type_detecte.mime]}"
+    empreinte = hashlib.sha256(contenu).hexdigest()
+
+    try:
+        enregistrer_fichier(contenu, nom_stocke, type_detecte.mime)
+    except StockageErreur:
+        flash("Le stockage est momentanément indisponible. Merci de réessayer.", "erreur")
+        return redirect(retour)
+
+    try:
+        db.session.add(Document(
+            dossier_id=dossier.id,
+            categorie=categorie,
+            nom_original=fichier.filename[:255],
+            nom_stocke=nom_stocke,
+            type_reel=type_detecte.mime,
+            taille=len(contenu),
+            sha256=empreinte,
+            source="equipe"
+        ))
+        db.session.add(Historique(
+            dossier_id=dossier.id,
+            utilisateur_id=current_user.id,
+            action=f"{CATEGORIES_DEVIS[categorie]} ajouté : {fichier.filename[:100]}"
+        ))
+        db.session.commit()
+    except Exception as erreur:
+        db.session.rollback()
+        print(f"[ERREUR BASE] {erreur}")
+        try:
+            supprimer_fichier(nom_stocke)
+        except StockageErreur:
+            print(f"[ATTENTION] fichier orphelin à supprimer : {nom_stocke}")
+        flash("Une erreur est survenue : le devis n'a pas été enregistré.", "erreur")
+        return redirect(retour)
+
+    flash(f"{CATEGORIES_DEVIS[categorie]} enregistré avec succès.", "succes")
+    return redirect(retour)
 
 
 @app.route("/equipe/documents/<int:document_id>/supprimer", methods=["POST"])
