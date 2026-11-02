@@ -1,35 +1,73 @@
 {% extends "base.html" %}
 
-{% block title %}Prévial — Contact{% endblock %}
+{% block title %}Prévial — Nous contacter{% endblock %}
+
+{% block description %}Contactez PREVIAL, courtier en assurance : par e-mail, par téléphone ou en demandant à être recontacté par un conseiller.{% endblock %}
 
 {% block content %}
-<section class="hero-banner" data-bg="{{ url_for('static', filename='contact.jpg') }}">
-  <div class="hero-banner-overlay">
-    <h1>Nous contacter</h1>
-    <p>Notre équipe est à votre écoute pour répondre à toutes vos questions.</p>
+<link rel="stylesheet" href="{{ url_for('static', filename='previal-pages.css') }}">
+<style>
+  .pv-contact { padding: 72px 0 80px; }
+  .pv-contact-grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .pv-contact-carte { display: flex; flex-direction: column; overflow: hidden; border: 1px solid #D5DEE7; border-radius: 24px; background: #fff; }
+  .pv-contact-carte img { display: block; width: 100%; height: 180px; object-fit: cover; background: #C9D8E6; }
+  .pv-contact-corps { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 12px; padding: 26px 26px 28px; }
+  .pv-contact-corps h2 { margin: 0; font-size: 1.4rem; color: var(--acc-navy); }
+  .pv-contact-corps p { margin: 0; flex: 1; line-height: 1.6; color: var(--acc-muted); }
+  @media (max-width: 980px) { .pv-contact-grille { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .pv-contact { padding: 48px 0 56px; } }
+</style>
+
+<section class="pv-bandeau" aria-labelledby="titre-contact">
+  <div class="acc-conteneur">
+    <nav class="pv-fil" aria-label="Fil d'Ariane">
+      <a href="/">Accueil</a><span aria-hidden="true">/</span>Nous contacter
+    </nav>
+    <h1 id="titre-contact">Nous contacter</h1>
+    <p class="pv-bandeau-texte">Notre équipe est à votre écoute pour répondre à toutes vos questions.</p>
   </div>
 </section>
 
-<section class="contact-info-section">
-  <div class="contact-info-card">
-   <img src="{{ url_for('static', filename='contact-email.jpg') }}" alt="E-mail" class="contact-info-image"> 
-    <h3>E-mail</h3>
-    <p><a href="mailto:contact@previal.fr">contact@previal.fr</a></p>
-  </div>
-  <div class="contact-info-card">
-   <img src="{{ url_for('static', filename='contact-telephone.jpg') }}" alt="Telephone" class="contact-info-image">
-    <h3>Téléphone</h3>
-    <p><a href="tel:0123456789">01 23 45 67 89</a></p>
-  </div>
-  <div class="contact-info-card">
-    <img src="{{ url_for('static', filename='contact-linkedin.jpg') }}" alt="linkedin" class="contact-info-image">
-    <h3>LinkedIn</h3>
-    <p><a href="https://www.linkedin.com/company/previal" target="_blank">Suivez-nous</a></p>
+<section class="pv-contact" aria-label="Nos coordonnées">
+  <div class="acc-conteneur">
+    <div class="pv-contact-grille">
+
+      <article class="pv-contact-carte">
+        <img src="{{ url_for('static', filename='email1.jpg') }}" alt="" loading="lazy">
+        <div class="pv-contact-corps">
+          <h2>E-mail</h2>
+          <p>Écrivez-nous : un conseiller vous répond.</p>
+          <a href="mailto:contact@previal.fr" class="acc-btn acc-btn-bleu">contact@previal.fr</a>
+        </div>
+      </article>
+
+      <article class="pv-contact-carte">
+        <img src="{{ url_for('static', filename='telephone.jpg') }}" alt="" loading="lazy">
+        <div class="pv-contact-corps">
+          <h2>Téléphone</h2>
+          <p>Appelez-nous pour échanger directement avec notre équipe.</p>
+          <a href="tel:0123456789" class="acc-btn acc-btn-bleu">01 43 45 09 13 </a>
+        </div>
+      </article>
+
+      <article class="pv-contact-carte">
+        <img src="{{ url_for('static', filename='link.jpg') }}" alt="" loading="lazy">
+        <div class="pv-contact-corps">
+          <h2>LinkedIn</h2>
+          <p>Suivez l'actualité de PREVIAL sur notre page.</p>
+          <a href="https://www.linkedin.com/company/previal" target="_blank" rel="noopener" class="acc-btn acc-btn-ligne">Suivez-nous</a>
+        </div>
+      </article>
+
+    </div>
   </div>
 </section>
 
-<section class="contact-cta-section">
-  <p>Vous préférez remplir un formulaire ?</p>
-  <a href="/#formulaire-contact" class="btn-primary">Être recontacté</a>
+<section class="pv-aide" aria-labelledby="titre-formulaire-contact">
+  <h2 id="titre-formulaire-contact">Vous préférez remplir un formulaire ?</h2>
+  <p>Dites-nous ce que vous cherchez : un conseiller PREVIAL vous rappelle au créneau de votre choix.</p>
+  <div class="pv-aide-actions">
+    <a href="/#formulaire-contact" class="acc-btn acc-btn-bleu">Être  contacté</a>
+  </div>
 </section>
 {% endblock %}

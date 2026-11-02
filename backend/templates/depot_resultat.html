@@ -1,33 +1,75 @@
 {% extends "base.html" %}
 
-{% block title %}PREVIAL — Dépôt de documents{% endblock %}
+{% block title %}Prévial — Vos documents{% endblock %}
 
 {% block content %}
-<div class="form-wrap">
-  {% if acceptes %}
-  <h1>Merci, vos documents sont bien reçus</h1>
-  <ul class="depot-liste">
-    {% for nom in acceptes %}
-    <li>✓ {{ nom }}</li>
-    {% endfor %}
-  </ul>
-  {% else %}
-  <h1>Aucun document enregistré</h1>
-  {% endif %}
+<link rel="stylesheet" href="{{ url_for('static', filename='previal-pages.css') }}">
+<style>
+  .pv-resultat { padding: 56px 0 72px; }
+  .pv-resultat-contenu { max-width: 760px; }
+  .pv-carte { margin: 0 0 20px; padding: 26px 28px; border: 1px solid transparent; border-radius: 20px; }
+  .pv-carte h2 { margin: 0 0 12px; font-size: 1.3rem; }
+  .pv-carte ul { margin: 0; padding: 0; list-style: none; }
+  .pv-carte li { padding: 6px 0; line-height: 1.5; }
+  .pv-carte-ok { background: #E6F4EA; border-color: #A8D5B5; color: #1E5B2F; }
+  .pv-carte-ok li::before { content: "✓"; margin-right: 10px; font-weight: 800; }
+  .pv-carte-attention { background: #FDECEC; border-color: #F3B4B4; color: #8A1F1F; }
+  .pv-carte-attention strong { display: inline; }
+  .pv-resultat-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 28px; }
+  .pv-resultat-note { margin: 24px 0 0; color: var(--acc-muted); line-height: 1.6; }
+</style>
 
-  {% if refuses %}
-  <div class="depot-note depot-erreur">
-    <p><strong>Ces documents n'ont pas été enregistrés :</strong></p>
-    <ul>
-      {% for libelle, raison in refuses %}
-      <li>{% if libelle %}{{ libelle }} : {% endif %}{{ raison }}</li>
-      {% endfor %}
-    </ul>
+{% if acceptes and not refuses %}
+  {% set titre = 'Merci, vos documents sont bien reçus' %}
+  {% set phrase = 'Un conseiller PREVIAL les consulte et reprend contact avec vous si besoin.' %}
+{% elif acceptes %}
+  {% set titre = 'Une partie de vos documents a été reçue' %}
+  {% set phrase = 'Certains fichiers n\'ont pas pu être enregistrés : voir ci-dessous.' %}
+{% else %}
+  {% set titre = 'Aucun document enregistré' %}
+  {% set phrase = 'Votre envoi n\'a pas pu être enregistré : voir ci-dessous.' %}
+{% endif %}
+
+<section class="pv-bandeau" aria-labelledby="titre-resultat">
+  <div class="acc-conteneur">
+    <h1 id="titre-resultat">{{ titre }}</h1>
+    <p class="pv-bandeau-texte">{{ phrase }}</p>
   </div>
-  {% endif %}
+</section>
 
-  {% if token and refuses %}
-  <a href="/depot/{{ token }}" class="btn-primary">Réessayer</a>
-  {% endif %}
-</div>
+<section class="pv-resultat">
+  <div class="acc-conteneur">
+    <div class="pv-resultat-contenu">
+
+      {% if acceptes %}
+      <div class="pv-carte pv-carte-ok" role="status">
+        <h2>Documents enregistrés</h2>
+        <ul>
+          {% for piece in acceptes %}<li>{{ piece }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if refuses %}
+      <div class="pv-carte pv-carte-attention" role="alert">
+        <h2>Ces documents n'ont pas été enregistrés</h2>
+        <ul>
+          {% for libelle, message in refuses %}
+          <li>{% if libelle %}<strong>{{ libelle }}</strong> : {% endif %}{{ message }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <div class="pv-resultat-actions">
+        {% if token %}
+        <a href="/depot/{{ token }}" class="acc-btn acc-btn-bleu">{% if acceptes %}Envoyer d'autres documents{% else %}Réessayer{% endif %}</a>
+        {% endif %}
+        <a href="/" class="acc-btn acc-btn-ligne">Retour à l'accueil</a>
+      </div>
+
+      <p class="pv-resultat-note">Une question sur votre dossier ? Votre conseiller PREVIAL reste joignable : utilisez le bouton « Être recontacté » sur notre accueil.</p>
+    </div>
+  </div>
+</section>
 {% endblock %}

@@ -1,11 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}PREVIAL — Lien non valable{% endblock %}
+{% block title %}Prévial — Lien non valide{% endblock %}
 
 {% block content %}
-<div class="form-wrap" style="text-align:center;">
-  <h1>Ce lien n'est plus valable</h1>
-  <p class="intro">Il a peut-être expiré ou été annulé. Contactez PREVIAL pour recevoir un nouveau lien.</p>
-  <a href="/contact-info" class="btn-primary">Nous contacter</a>
-</div>
+<link rel="stylesheet" href="{{ url_for('static', filename='previal-pages.css') }}">
+
+<section class="pv-bandeau" aria-labelledby="titre-invalide">
+  <div class="acc-conteneur">
+    <h1 id="titre-invalide">Ce lien n'est plus valide</h1>
+    <p class="pv-bandeau-texte">Votre lien de dépôt de documents a expiré ou a été annulé.</p>
+  </div>
+</section>
+
+<section class="pv-aide" aria-labelledby="titre-aide-invalide">
+  <h2 id="titre-aide-invalide">Pas de panique</h2>
+  <p>Les liens de dépôt sont valables 48 heures. Demandez à votre conseiller PREVIAL de vous en envoyer un nouveau : il vous suffit de demander à être recontacté.</p>
+  <div class="pv-aide-actions">
+    <a href="/#formulaire-contact" class="acc-btn acc-btn-bleu">Être recontacté</a>
+    <a href="/" class="acc-btn acc-btn-ligne">Retour à l'accueil</a>
+  </div>
+</section>
 {% endblock %}
