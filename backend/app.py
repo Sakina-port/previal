@@ -16,7 +16,6 @@ import zipfile
 import re
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-from weasyprint import HTML
 from sqlalchemy import or_, exists, and_
 from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document, Rappel, EtudePartenaire, JournalConnexion
 from moteur_devis import obtenir_devis
@@ -228,6 +227,7 @@ def signature(dossier_id):
     devis = Devis.query.filter_by(dossier_id=dossier.id).first()
 
     if request.method == "POST":
+        from weasyprint import HTLM 
         dossier.statut = "accepte"
 
         dossier_documents = os.path.join("static", "documents")
