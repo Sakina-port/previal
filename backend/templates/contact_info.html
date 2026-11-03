@@ -2,15 +2,15 @@
 
 {% block title %}Prévial — Nous contacter{% endblock %}
 
-{% block description %}Contactez PREVIAL, courtier en assurance : par e-mail, par téléphone ou en demandant à être recontacté par un conseiller.{% endblock %}
+{% block description %}Contactez PREVIAL, courtier en assurance : par e-mail, par téléphone ou en demandant à être contacté par un conseiller.{% endblock %}
 
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='previal-pages.css') }}">
 <style>
   .pv-contact { padding: 72px 0 80px; }
   .pv-contact-grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
-  .pv-contact-carte { display: flex; flex-direction: column; overflow: hidden; border: 1px solid #D5DEE7; border-radius: 24px; background: #fff; }
-  .pv-contact-carte img { display: block; width: 100%; height: 180px; object-fit: cover; background: #C9D8E6; }
+  .pv-contact-carte { display: flex; flex-direction: column; overflow: hidden; border: 1px solid #D6E4E2; border-radius: 24px; background: #fff; }
+  .pv-contact-carte img { display: block; width: 100%; height: 180px; object-fit: cover; background: #CCE3E0; }
   .pv-contact-corps { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 12px; padding: 26px 26px 28px; }
   .pv-contact-corps h2 { margin: 0; font-size: 1.4rem; color: var(--acc-navy); }
   .pv-contact-corps p { margin: 0; flex: 1; line-height: 1.6; color: var(--acc-muted); }
@@ -33,7 +33,7 @@
     <div class="pv-contact-grille">
 
       <article class="pv-contact-carte">
-        <img src="{{ url_for('static', filename='email1.jpg') }}" alt="" loading="lazy">
+        <img src="{{ url_for('static', filename='contact-email.jpg') }}" alt="" loading="lazy">
         <div class="pv-contact-corps">
           <h2>E-mail</h2>
           <p>Écrivez-nous : un conseiller vous répond.</p>
@@ -42,16 +42,16 @@
       </article>
 
       <article class="pv-contact-carte">
-        <img src="{{ url_for('static', filename='telephone.jpg') }}" alt="" loading="lazy">
+        <img src="{{ url_for('static', filename='contact-telephone.jpg') }}" alt="" loading="lazy">
         <div class="pv-contact-corps">
           <h2>Téléphone</h2>
           <p>Appelez-nous pour échanger directement avec notre équipe.</p>
-          <a href="tel:0123456789" class="acc-btn acc-btn-bleu">01 43 45 09 13 </a>
+          <a href="tel:0123456789" class="acc-btn acc-btn-bleu">01 23 45 67 89</a>
         </div>
       </article>
 
       <article class="pv-contact-carte">
-        <img src="{{ url_for('static', filename='link.jpg') }}" alt="" loading="lazy">
+        <img src="{{ url_for('static', filename='contact-linkedin.jpg') }}" alt="" loading="lazy">
         <div class="pv-contact-corps">
           <h2>LinkedIn</h2>
           <p>Suivez l'actualité de PREVIAL sur notre page.</p>
@@ -67,7 +67,7 @@
   <h2 id="titre-formulaire-contact">Vous préférez remplir un formulaire ?</h2>
   <p>Dites-nous ce que vous cherchez : un conseiller PREVIAL vous rappelle au créneau de votre choix.</p>
   <div class="pv-aide-actions">
-    <a href="/#formulaire-contact" class="acc-btn acc-btn-bleu">Être  contacté</a>
+    <a href="/#formulaire-contact" class="acc-btn acc-btn-bleu">Être contacté</a>
   </div>
 </section>
 {% endblock %}

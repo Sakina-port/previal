@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='previal-pages.css') }}">
 
 {% set images = {
-  "Mutuelle santé particuliers": "sante.jpg",
+  "Mutuelle santé particuliers": "particulier.jpg",
   "Mutuelle santé seniors": "sante1.jpg",
   "Mutuelle santé TNS": "sante-tns.jpg",
   "Prévoyance TNS": "prevoyance-tns.jpg",
@@ -44,7 +44,7 @@
     <div class="pv-grille pv-grille-{{ colonnes }}">
       {% for produit in produits %}
       <article class="pv-produit">
-        <img class="pv-produit-photo" src="{{ url_for('static', filename=images.get(produit.nom, 'sante.jpg')) }}" alt="">
+        <img class="pv-produit-photo" src="{{ url_for('static', filename=images.get(produit.nom, 'particulier.jpg')) }}" alt="">
         <div class="pv-produit-corps">
           {% if produit.categorie %}<span class="pv-puce">{{ produit.categorie }}</span>{% endif %}
           <h3>{{ produit.nom }}</h3>
