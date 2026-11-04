@@ -21,11 +21,16 @@ from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur,
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents, notifier_equipe_depot
 from stockage import enregistrer_fichier, lire_fichier, supprimer_fichier, StockageErreur, existe_dans_bucket, adresse_temporaire
+from config_base import configurer_base
 
 load_dotenv()
 
+SUR_VERCEL = os.getenv("VERCEL") == "1"
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'], app.config['SQLALCHEMY_ENGINE_OPTIONS'] = configurer_base(os.getenv('DATABASE_URL'))
+if SUR_VERCEL and not os.getenv('SECRET_KEY'):
+    raise RuntimeError("SECRET_KEY n'est pas définie dans les variables Vercel (Production).")
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change-moi-plus-tard')
 app.config['MAX_CONTENT_LENGTH'] = 60 * 1024 * 1024
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
@@ -115,6 +120,26 @@ def heure_paris(valeur, format="%d/%m/%Y %H:%M"):
     if valeur is None:
         return ""
     return valeur.replace(tzinfo=timezone.utc).astimezone(ZoneInfo("Europe/Paris")).strftime(format)
+
+
+MESSAGE_PDF_INDISPONIBLE = (
+    "La génération des PDF est indisponible sur cet hébergement "
+    "(bibliothèques système de WeasyPrint absentes). Aucune modification n'a été enregistrée."
+)
+
+
+class PdfIndisponible(Exception):
+    pass
+
+
+def classe_html_weasyprint():
+    # Import tardif : sans Pango (cas de Vercel), l'import échoue avec OSError.
+    try:
+        from weasyprint import HTML
+    except (ImportError, OSError) as erreur:
+        app.logger.error("WeasyPrint indisponible : %s", erreur)
+        raise PdfIndisponible(MESSAGE_PDF_INDISPONIBLE) from erreur
+    return HTML
 
 
 @login_manager.user_loader
@@ -227,10 +252,15 @@ def signature(dossier_id):
     devis = Devis.query.filter_by(dossier_id=dossier.id).first()
 
     if request.method == "POST":
-        from weasyprint import HTLM 
+        # Vérifié avant toute écriture : en cas d'échec, le dossier reste inchangé.
+        try:
+            HTML = classe_html_weasyprint()
+        except PdfIndisponible as erreur:
+            return render_template("fonctionnalite_desactivee.html", message=str(erreur)), 503
+
         dossier.statut = "accepte"
 
-        dossier_documents = os.path.join("static", "documents")
+        dossier_documents = os.path.join(app.static_folder, "documents")
         os.makedirs(dossier_documents, exist_ok=True)
 
         signature_data = request.form.get("signature_data")
@@ -1012,7 +1042,7 @@ def pdf_dossier(dossier):
         libelles_pieces={**dict(PIECES), **CATEGORIES_DEVIS},
         date_export=datetime.utcnow()
     )
-    return HTML(string=html).write_pdf()
+    return classe_html_weasyprint()(string=html).write_pdf()
 
 
 @app.route("/equipe/dossiers/<int:dossier_id>/export-complet")
@@ -1023,7 +1053,11 @@ def equipe_export_complet(dossier_id):
 
     dossier = Dossier.query.get_or_404(dossier_id)
     contenu_json = json.dumps(donnees_dossier(dossier), ensure_ascii=False, indent=2)
-    contenu_pdf = pdf_dossier(dossier)
+    try:
+        contenu_pdf = pdf_dossier(dossier)
+    except PdfIndisponible as erreur:
+        flash(str(erreur), "erreur")
+        return redirect(f"/equipe/dossiers/{dossier.id}")
 
     db.session.add(Historique(
         dossier_id=dossier.id,
@@ -1563,8 +1597,12 @@ def equipe_supprimer_definitivement(document_id):
     return redirect(f"/equipe/dossiers/{dossier_id}")
 
 
-with app.app_context():
-    db.create_all()
+# Local et Docker : tables créées au démarrage, comme avant.
+# Vercel : désactivé par défaut (pas de connexion à chaque démarrage à froid) ;
+# les tables sont créées une fois avec preparer_demo.py.
+if os.getenv("CREER_TABLES_AU_DEMARRAGE", "0" if SUR_VERCEL else "1") == "1":
+    with app.app_context():
+        db.create_all()
 
 if __name__ == "__main__":
     app.run(debug=True)
