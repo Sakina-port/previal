@@ -41,54 +41,39 @@
 <section class="pv-legal">
   <div class="acc-conteneur">
     <div class="pv-legal-contenu">
-      <div class="pv-provisoire">
-        <strong>Texte provisoire, à compléter par PREVIAL.</strong>
-        Les passages surlignés sont à fournir par la direction. Ce texte doit être validé avec le conseil juridique de PREVIAL avant la mise en ligne.
-      </div>
-
       {% if page == "mentions" %}
-      <nav class="pv-sommaire" aria-label="Sommaire">
-        <strong>Sommaire</strong>
-        <ol>
-          <li><a href="#editeur">Éditeur du site</a></li>
-          <li><a href="#courtier">Informations réglementaires du courtier</a></li>
-          <li><a href="#reclamations">Réclamations et médiation</a></li>
-          <li><a href="#hebergeur">Hébergement et réalisation</a></li>
-          <li><a href="#propriete">Propriété intellectuelle</a></li>
-          <li><a href="#liens">Liens hypertextes et droit de réponse</a></li>
-          <li><a href="#donnees">Données personnelles et cookies</a></li>
-        </ol>
-      </nav>
-
       <h2 id="editeur">Éditeur du site</h2>
-      <p>Éditeur : <strong>AUMEX</strong><br>
+      <p>Éditeur : <strong>pas encore </strong><br>
       Nom du site : PREVIAL<br>
-      Forme juridique et capital : société par actions simplifiée au capital de 8 000,00 euros<br>
+      Forme juridique et capital : société par actions simplifiée au capital de 5 000,00 euros<br>
       SIREN : 811 770 726 · SIRET : 811 770 726 00040<br>
       RCS : Paris B 811 770 726<br>
       Siège social : 74 avenue du Docteur Arnold Netter, 75012 Paris, France<br>
       Téléphone : <a href="tel:0143450913">01 43 45 09 13</a><br>
       E-mail : <a href="mailto:contact@previal.fr">contact@previal.fr</a><br>
-      N° de TVA intracommunautaire : {{ a('le cas échéant') }}<br>
+      N° de TVA intracommunautaire : FR88106827645<br>
       Directeur de la publication : {{ a() }}</p>
 
       <h2 id="courtier">Informations réglementaires du courtier</h2>
       <p>PREVIAL exerce une activité d'intermédiation en assurance (courtage).</p>
-      <p>Immatriculation à l'ORIAS : n° {{ a() }}, catégorie {{ a('courtier d\'assurance, à confirmer') }}. Cette immatriculation peut être vérifiée sur <a href="https://www.orias.fr" target="_blank" rel="noopener">www.orias.fr</a>.</p>
+      <p>Immatriculation à l'ORIAS : n° 26010688, catégorie Courtier en Assurance (COA) sans maniement de fonds. Cette immatriculation peut être vérifiée sur <a href="https://www.orias.fr" target="_blank" rel="noopener">www.orias.fr</a>.</p>
       <p>Autorité de contrôle : Autorité de contrôle prudentiel et de résolution (ACPR), 4 place de Budapest, CS 92459, 75436 Paris Cedex 09.</p>
-      <p>Assurance de responsabilité civile professionnelle et garantie financière : {{ a('assureur et numéro de contrat') }}.</p>
-      <p>Assureurs partenaires : {{ a('liste des assureurs avec lesquels PREVIAL travaille') }}.</p>
-      <p>Liens financiers avec des assureurs : {{ a('à confirmer : participation éventuelle d\'un assureur au capital de PREVIAL, ou de PREVIAL au capital d\'un assureur') }}.</p>
-      <p>Mode de rémunération : {{ a('à confirmer : commissions versées par les assureurs, honoraires éventuels') }}.</p>
+      <p>Assurance de responsabilité civile professionnelle et garantie financière : PREVIAL est couverte par une assurance de responsabilité civile professionnelle souscrite auprès de AIG EUROPE SA, Succursale pour la France, sous le numéro de contrat #RA0006714.
+PREVIAL n'encaisse aucun fonds destinés aux entreprises d'assurance ou aux assurés et n'est donc pas soumise à l'obligation de garantie financière.
+</p>
+      <p>Assureurs partenaires : PREVIAL travaille avec plusieurs partenaires assureurs et intermédiaires d'assurance afin de proposer des solutions adaptées aux besoins de ses clients. La liste des entreprises d'assurance partenaires peut être communiquée sur simple demande.</p>
+      <p>Liens financiers avec des assureurs : PREVIAL ne détient aucune participation dans le capital d’une entreprise d’assurance, et aucune entreprise d’assurance ne détient de participation dans PREVIAL.</p>
+      <p>Mode de rémunération : PREVIAL est rémunérée sous forme de commissions versées par les entreprises d'assurance ou les partenaires distributeurs auprès desquels les contrats sont souscrits. PREVIAL ne facture pas d'honoraires de courtage directement à ses clients.</p>
 
       <h2 id="reclamations">Réclamations et médiation</h2>
       <p>Pour toute réclamation, vous pouvez écrire à PREVIAL par e-mail à <a href="mailto:contact@previal.fr">contact@previal.fr</a> ou par courrier à l'adresse du siège social : AUMEX, 74 avenue du Docteur Arnold Netter, 75012 Paris.</p>
-      <p>PREVIAL accuse réception de votre réclamation dans un délai de {{ a('par exemple 10 jours ouvrables') }} et vous répond dans un délai de {{ a('par exemple 2 mois') }}.</p>
-      <p>Si le désaccord persiste après la réponse de PREVIAL, vous pouvez saisir gratuitement le médiateur : {{ a('nom, adresse postale et site internet du médiateur choisi par PREVIAL') }}.</p>
+      <p>PREVIAL accuse réception de votre réclamation dans un délai de par exemple 10 jours ouvrables et vous répond dans un délai de  2 mois.</p>
+      <p>Si le désaccord persiste après la réponse de PREVIAL, vous pouvez saisir gratuitement le médiateur :  Si le désaccord persiste après la réponse de PREVIAL, vous pouvez saisir gratuitement le médiateur : 
+La Médiation de l'Assurance - TSA 50110 - 75441 Paris Cedex 09
+Email : le.mediateur@mediation-assurance.org</p>
 
-      <h2 id="hebergeur">Hébergement et réalisation</h2>
-      <p>Hébergeur du site : {{ a('nom, adresse et téléphone') }}.<br>
-      Site réalisé par : {{ a() }}.</p>
+      <h2 id="hebergeur">Hébergement </h2>
+      <p>Hébergeur du site : {{ a('nom, adresse et téléphone') }}.</p>
 
       <h2 id="propriete">Propriété intellectuelle</h2>
       <p>L'ensemble de ce site (textes, images, logos, mise en page) relève de la législation française et internationale sur le droit d'auteur et la propriété intellectuelle. Tous les droits de reproduction sont réservés.</p>
@@ -103,20 +88,6 @@
       <p>Le traitement de vos données personnelles est expliqué dans notre <a href="/confidentialite">politique de confidentialité</a>. L'utilisation des cookies est décrite dans notre <a href="/cookies">gestion des cookies</a>.</p>
 
       {% elif page == "confidentialite" %}
-      <nav class="pv-sommaire" aria-label="Sommaire">
-        <strong>Sommaire</strong>
-        <ol>
-          <li><a href="#responsable">Qui est responsable de vos données ?</a></li>
-          <li><a href="#donnees">Quelles données collectons-nous ?</a></li>
-          <li><a href="#finalites">Pourquoi et sur quelle base ?</a></li>
-          <li><a href="#destinataires">Qui reçoit vos données ?</a></li>
-          <li><a href="#duree">Combien de temps les gardons-nous ?</a></li>
-          <li><a href="#securite">Comment sont-elles protégées ?</a></li>
-          <li><a href="#droits">Vos droits</a></li>
-          <li><a href="#contact">Nous contacter, réclamer</a></li>
-        </ol>
-      </nav>
-
       <h2 id="responsable">Qui est responsable de vos données ?</h2>
       <p>Le responsable du traitement est la société AUMEX, société par actions simplifiée au capital de 8 000,00 euros (SIREN 811 770 726), dont le siège social est situé 74 avenue du Docteur Arnold Netter, 75012 Paris, France. Elle édite le site PREVIAL. Pour toute question sur vos données : <a href="mailto:contact@previal.fr">contact@previal.fr</a>.</p>
 
@@ -139,11 +110,11 @@
         <table>
           <thead><tr><th>Ce que nous faisons</th><th>Base juridique</th></tr></thead>
           <tbody>
-            <tr><td>Répondre à votre demande et vous rappeler au créneau choisi</td><td>Votre consentement (case à cocher) {{ a('à valider') }}</td></tr>
-            <tr><td>Recueillir les pièces nécessaires à l'étude de votre dossier</td><td>Mesures précontractuelles prises à votre demande {{ a('à valider') }}</td></tr>
-            <tr><td>Étudier votre demande auprès de nos assureurs partenaires et vous faire une proposition</td><td>Mesures précontractuelles prises à votre demande {{ a('à valider') }}</td></tr>
-            <tr><td>Conserver la preuve de votre accord</td><td>Intérêt légitime de PREVIAL {{ a('à valider') }}</td></tr>
-            <tr><td>Sécuriser l'espace réservé à l'équipe (journal des connexions : e-mail saisi, résultat, adresse IP)</td><td>Intérêt légitime de PREVIAL : la sécurité {{ a('à valider') }}</td></tr>
+            <tr><td>Répondre à votre demande et vous rappeler au créneau choisi</td><td>Votre consentement (case à cocher) </td></tr>
+            <tr><td>Recueillir les pièces nécessaires à l'étude de votre dossier</td><td>Mesures précontractuelles prises à votre demande </td></tr>
+            <tr><td>Étudier votre demande auprès de nos assureurs partenaires et vous faire une proposition</td><td>Mesures précontractuelles prises à votre demande </td></tr>
+            <tr><td>Conserver la preuve de votre accord</td><td>Intérêt légitime de PREVIAL </td></tr>
+            <tr><td>Sécuriser l'espace réservé à l'équipe (journal des connexions : e-mail saisi, résultat, adresse IP)</td><td>Intérêt légitime de PREVIAL : la sécurité </td></tr>
           </tbody>
         </table>
       </div>
@@ -191,17 +162,6 @@
       <p>Dernière mise à jour : {{ a('date') }}.</p>
 
       {% elif page == "cookies" %}
-      <nav class="pv-sommaire" aria-label="Sommaire">
-        <strong>Sommaire</strong>
-        <ol>
-          <li><a href="#cest-quoi">Qu'est-ce qu'un cookie ?</a></li>
-          <li><a href="#utilises">Les cookies utilisés sur ce site</a></li>
-          <li><a href="#aucun">Ce que nous n'utilisons pas</a></li>
-          <li><a href="#gerer">Gérer ou supprimer les cookies</a></li>
-          <li><a href="#contact-cookies">Nous contacter</a></li>
-        </ol>
-      </nav>
-
       <h2 id="cest-quoi">Qu'est-ce qu'un cookie ?</h2>
       <p>Un cookie est un petit fichier enregistré par votre navigateur sur votre appareil quand vous visitez un site. Il peut être renvoyé au site lors d'une visite ultérieure, par exemple pour reconnaître votre session.</p>
 

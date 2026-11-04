@@ -1000,6 +1000,7 @@ def donnees_dossier(dossier):
 
 
 def pdf_dossier(dossier):
+    from weasyprint import HTML
     historique = Historique.query.filter_by(dossier_id=dossier.id).order_by(Historique.date_creation.asc()).all()
     documents = Document.query.filter_by(dossier_id=dossier.id).order_by(Document.date_creation.asc()).all()
     html = render_template(

@@ -1,8 +1,14 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 db = SQLAlchemy()
+
+
+def maintenant_paris():
+    # Heure de Paris (heure d'été et d'hiver gérées automatiquement), sans fuseau attaché
+    return datetime.now(ZoneInfo("Europe/Paris")).replace(tzinfo=None)
 
 
 class Utilisateur(db.Model, UserMixin):
@@ -13,7 +19,7 @@ class Utilisateur(db.Model, UserMixin):
     email = db.Column(db.String(200), unique=True, nullable=False)
     mot_de_passe = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default='client')
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)
 
 
 class Produit(db.Model):
@@ -37,7 +43,7 @@ class Dossier(db.Model):
     source = db.Column(db.String(50), default='interne')
     reponses = db.Column(db.JSON)
     archive = db.Column(db.Boolean, nullable=False, default=False)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)
     
     __table_args__ = (
         db.Index('idx_dossiers_archive_date', 'archive', 'date_creation'),
@@ -53,7 +59,7 @@ class Devis(db.Model):
     provider = db.Column(db.String(50), default='interne')
     payload_brut = db.Column(db.JSON)
     fichier_pdf = db.Column(db.String(255))
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)
 
 
 class Contrat(db.Model):
@@ -62,7 +68,7 @@ class Contrat(db.Model):
     dossier_id = db.Column(db.Integer, db.ForeignKey('dossiers.id'))
     fichier_pdf = db.Column(db.String(255))
     source = db.Column(db.String(50), default='interne')
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)
 
 
 class Attestation(db.Model):
@@ -97,7 +103,7 @@ class Historique(db.Model):
     dossier_id = db.Column(db.Integer, db.ForeignKey('dossiers.id'), nullable=False)
     utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=True)
     action = db.Column(db.String(255), nullable=False)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)
 
 
 class Note(db.Model):
@@ -106,7 +112,7 @@ class Note(db.Model):
     dossier_id = db.Column(db.Integer, db.ForeignKey('dossiers.id'), nullable=False)
     utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=False)
     contenu = db.Column(db.Text, nullable=False)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)
 
 class DemandeDocuments(db.Model):
     __tablename__ = 'demandes_documents'
@@ -117,7 +123,7 @@ class DemandeDocuments(db.Model):
     token = db.Column(db.String(100), unique=True, nullable=True)
     date_expiration = db.Column(db.DateTime, nullable=True)
     revoquee = db.Column(db.Boolean, default=False)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)
 
 class Document(db.Model):
     __tablename__ = 'documents'
@@ -133,7 +139,7 @@ class Document(db.Model):
     source = db.Column(db.String(30), default='client')
     statut = db.Column(db.String(30), default= 'recu')
     date_suppression_prevue = db.Column(db.DateTime, nullable=True)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)
 
 class Rappel(db.Model):
     __tablename__ = 'rappels'
@@ -144,7 +150,7 @@ class Rappel(db.Model):
     contenu = db.Column(db.String(255), nullable=False)
     fait = db.Column(db.Boolean, default=False)
     date_fait = db.Column(db.DateTime, nullable=True)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)
     
     __table_args__ = (
         db.Index('idx_rappels_fait_date', 'fait', 'date_rappel'),
@@ -158,8 +164,8 @@ class EtudePartenaire(db.Model):
     partenaire = db.Column(db.String(100), nullable=False)
     etat = db.Column(db.String(30), default='a_interroger')
     commentaire = db.Column(db.String(255))
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
-    date_maj = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)
+    date_maj = db.Column(db.DateTime, default=maintenant_paris, onupdate=maintenant_paris)
 
 class JournalConnexion(db.Model):
     __tablename__ = 'journal_connexions'
@@ -168,4 +174,4 @@ class JournalConnexion(db.Model):
     email_saisi = db.Column(db.String(200))
     succes = db.Column(db.Boolean, nullable=False)
     adresse_ip = db.Column(db.String(45))
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_paris)

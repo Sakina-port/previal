@@ -132,24 +132,29 @@
   const panneau = document.getElementById('chatbot-panneau');
   const fermer = document.getElementById('chatbot-fermer');
 
-  bulle.addEventListener('click', () => {
-    panneau.classList.toggle('ouvert');
-  });
-  fermer.addEventListener('click', () => {
-    panneau.classList.remove('ouvert');
-  });
+  if (bulle && panneau) {
+    bulle.addEventListener('click', () => {
+      panneau.classList.toggle('ouvert');
+    });
+  }
+  if (fermer && panneau) {
+    fermer.addEventListener('click', () => {
+      panneau.classList.remove('ouvert');
+    });
+  }
 
   (function () {
-    function demarrer(bouton) {
-      if (bouton.classList.contains('charge')) return;
-      bouton.classList.add('charge');
-      bouton.setAttribute('aria-busy', 'true');
+    function demarrer(element) {
+      if (element.classList.contains('charge')) return;
+      element.classList.add('charge');
+      element.setAttribute('aria-busy', 'true');
     }
-    function arreter(bouton) {
-      bouton.classList.remove('charge');
-      bouton.removeAttribute('aria-busy');
+    function arreter(element) {
+      element.classList.remove('charge');
+      element.removeAttribute('aria-busy');
     }
 
+    // Tous les boutons d'envoi de formulaire
     document.addEventListener('submit', function (e) {
       if (e.defaultPrevented) return;
       var formulaire = e.target;
@@ -157,16 +162,20 @@
         e.preventDefault();
         return;
       }
-      var bouton = e.submitter || formulaire.querySelector('button[type="submit"]');
+      var bouton = e.submitter || formulaire.querySelector('button[type="submit"], button:not([type]), input[type="submit"]');
       formulaire.dataset.envoi = '1';
       if (bouton) demarrer(bouton);
     });
 
+    // Tous les liens et boutons-liens qui ouvrent une autre page
     document.addEventListener('click', function (e) {
-      var lien = e.target.closest('a.btn-primary, a.eq-btn');
-      if (!lien) return;
+      if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      var lien = e.target.closest('a[href]');
+      if (!lien || lien.target === '_blank' || lien.hasAttribute('download')) return;
       var adresse = lien.getAttribute('href') || '';
-      if (adresse.charAt(0) === '#' || lien.target === '_blank' || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      if (adresse === '' || adresse.charAt(0) === '#' || /^(mailto:|tel:|javascript:)/i.test(adresse)) return;
+      if (lien.origin && lien.origin !== window.location.origin) return;
+      if (lien.hash && lien.pathname === window.location.pathname && lien.search === window.location.search) return;
       demarrer(lien);
       if (adresse.indexOf('export') !== -1) {
         setTimeout(function () { arreter(lien); }, 4000);
