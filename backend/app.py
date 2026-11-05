@@ -17,7 +17,7 @@ import re
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from sqlalchemy import or_, exists, and_
-from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document, Rappel, EtudePartenaire, JournalConnexion
+from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur, Historique, Note, DemandeDocuments, Document, Rappel, EtudePartenaire, JournalConnexion, maintenant_paris
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents, notifier_equipe_depot
 from stockage import enregistrer_fichier, lire_fichier, supprimer_fichier, StockageErreur, existe_dans_bucket, adresse_temporaire
@@ -119,7 +119,7 @@ def droits_pour_templates():
 def heure_paris(valeur, format="%d/%m/%Y %H:%M"):
     if valeur is None:
         return ""
-    return valeur.replace(tzinfo=timezone.utc).astimezone(ZoneInfo("Europe/Paris")).strftime(format)
+    return valeur.strftime(format)
 
 
 MESSAGE_PDF_INDISPONIBLE = (
@@ -276,7 +276,7 @@ def signature(dossier_id):
             statut="signe",
             provider="interne",
             fichier_signature=f"documents/{nom_fichier_signature}",
-            date_signature=datetime.utcnow()
+            date_signature=maintenant_paris()
         )
         db.session.add(nouvelle_signature)
         db.session.commit()
@@ -620,9 +620,9 @@ def equipe_tableau_de_bord():
 
     derniers_dossiers = Dossier.query.filter_by(archive=False).order_by(Dossier.date_creation.desc()).limit(10).all()
 
-    maintenant = datetime.utcnow()
+    maintenant = maintenant_paris()
     demain_paris = (datetime.now(ZoneInfo("Europe/Paris")) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    fin_aujourdhui = demain_paris.astimezone(timezone.utc).replace(tzinfo=None)
+    fin_aujourdhui = demain_paris.replace(tzinfo=None)
 
     rappels_a_traiter = Rappel.query.filter(
         Rappel.fait.is_(False),
@@ -663,7 +663,7 @@ def equipe_dossiers_a_examiner():
 
     mois = request.args.get("mois", DUREE_CONSERVATION_MOIS, type=int)
     mois = max(0, min(mois, 240))
-    limite = datetime.utcnow() - timedelta(days=30 * mois)
+    limite = maintenant_paris() - timedelta(days=30 * mois)
 
     dossiers = Dossier.query.filter(Dossier.date_creation < limite).order_by(Dossier.date_creation.asc()).all()
     return render_template(
@@ -930,7 +930,7 @@ def equipe_fiche_dossier(dossier_id):
             etat = "Annulé"
         elif dm.date_expiration is None:
             etat = "Sans lien"
-        elif dm.date_expiration < datetime.utcnow():
+        elif dm.date_expiration < maintenant_paris():
             etat = "Expiré"
         else:
             etat = "Actif"
@@ -988,7 +988,7 @@ def equipe_fiche_dossier(dossier_id):
 
 
 def date_utc_texte(valeur):
-    return valeur.strftime("%Y-%m-%d %H:%M:%S") + " UTC" if valeur else None
+    return valeur.strftime("%Y-%m-%d %H:%M:%S") if valeur else None
 
 
 def donnees_dossier(dossier):
@@ -1025,7 +1025,7 @@ def donnees_dossier(dossier):
             {"partenaire": e.partenaire, "etat": e.etat, "commentaire": e.commentaire, "mise_a_jour": date_utc_texte(e.date_maj)}
             for e in EtudePartenaire.query.filter_by(dossier_id=dossier.id).order_by(EtudePartenaire.date_creation.asc()).all()
         ],
-        "remarque": "Les dates sont en heure UTC, sauf consentement_date (heure de Paris).",
+        "remarque": "Toutes les dates sont en heure de Paris.",
     }
 
 
@@ -1040,7 +1040,7 @@ def pdf_dossier(dossier):
         historique=historique,
         documents=documents,
         libelles_pieces={**dict(PIECES), **CATEGORIES_DEVIS},
-        date_export=datetime.utcnow()
+        date_export=maintenant_paris()
     )
     return classe_html_weasyprint()(string=html).write_pdf()
 
@@ -1167,7 +1167,7 @@ def equipe_ajouter_rappel(dossier_id):
         except ValueError:
             return redirect(f"/equipe/dossiers/{dossier.id}")
 
-        date_utc = date_locale.replace(tzinfo=ZoneInfo("Europe/Paris")).astimezone(timezone.utc).replace(tzinfo=None)
+        date_utc = date_locale
 
         db.session.add(Rappel(
             dossier_id=dossier.id,
@@ -1196,7 +1196,7 @@ def equipe_rappel_fait(dossier_id, rappel_id):
 
     if rappel.dossier_id == dossier.id and not rappel.fait:
         rappel.fait = True
-        rappel.date_fait = datetime.utcnow()
+        rappel.date_fait = maintenant_paris()
         db.session.add(Historique(
             dossier_id=dossier.id,
             utilisateur_id=current_user.id,
@@ -1249,7 +1249,7 @@ def equipe_demander_documents(dossier_id):
 
     if choisies:
         token = secrets.token_urlsafe(32)
-        expiration = datetime.utcnow() + timedelta(hours=DUREE_LIEN_HEURES)
+        expiration = maintenant_paris() + timedelta(hours=DUREE_LIEN_HEURES)
 
         db.session.add(DemandeDocuments(
             dossier_id=dossier.id,
@@ -1303,7 +1303,7 @@ def verifier_lien(token):
     if (demande is not None
             and not demande.revoquee
             and demande.date_expiration is not None
-            and demande.date_expiration > datetime.utcnow()):
+            and demande.date_expiration > maintenant_paris()):
         return demande
     return None
 
