@@ -31,6 +31,9 @@ class Produit(db.Model):
     presentation = db.Column(db.Text)
     garanties = db.Column(db.JSON)
     formulaire_schema = db.Column(db.JSON)
+    espace = db.Column(db.String(30))
+    photo = db.Column(db.String(100))
+    ordre = db.Column(db.Integer)
 
 
 class Dossier(db.Model):

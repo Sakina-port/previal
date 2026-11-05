@@ -173,7 +173,7 @@ def devis_choix():
 
 @app.route("/particuliers")
 def page_particuliers():
-    produits = Produit.query.filter(Produit.categorie.in_(CATEGORIES_PARTICULIERS)).all()
+    produits = Produit.query.filter_by(espace="Particuliers").order_by(Produit.ordre, Produit.id).all()
     return render_template(
         "liste_produits.html",
         produits=produits,
@@ -185,7 +185,7 @@ def page_particuliers():
 
 @app.route("/professionnels")
 def page_professionnels():
-    produits = Produit.query.filter(Produit.categorie.in_(CATEGORIES_PROFESSIONNELS)).all()
+    produits = Produit.query.filter_by(espace="Professionnels").order_by(Produit.ordre, Produit.id).all()
     return render_template(
         "liste_produits.html",
         produits=produits,
@@ -195,9 +195,23 @@ def page_professionnels():
     )
 
 
+@app.route("/dirigeants")
+def page_dirigeants():
+    produits = Produit.query.filter_by(espace="Dirigeants").order_by(Produit.ordre, Produit.id).all()
+    return render_template(
+        "liste_produits.html",
+        produits=produits,
+        titre="Dirigeants",
+        sous_titre="Nos solutions pour les dirigeants d'entreprise.",
+        vers_devis=False
+    )
+
+
 @app.route("/produits/<int:produit_id>")
 def fiche_produit(produit_id):
     produit = Produit.query.get_or_404(produit_id)
+    if produit.espace is None:
+        abort(404)
     return render_template("produit.html", produit=produit)
 
 
@@ -564,9 +578,9 @@ def robots_txt():
 
 @app.route("/sitemap.xml")
 def sitemap_xml():
-    adresses = ["/", "/particuliers", "/professionnels", "/contact-info",
+    adresses = ["/", "/particuliers", "/professionnels", "/dirigeants", "/contact-info",
                 "/mentions-legales", "/confidentialite", "/cookies"]
-    adresses += [f"/produits/{p.id}" for p in Produit.query.all()]
+    adresses += [f"/produits/{p.id}" for p in Produit.query.filter(Produit.espace.isnot(None)).all()]
 
     lignes = ['<?xml version="1.0" encoding="UTF-8"?>',
               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']

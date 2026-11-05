@@ -37,17 +37,8 @@
   }
 </style>
 
-{% set images = {
-  "Mutuelle santé particuliers": "particulier.jpg",
-  "Mutuelle santé seniors": "senior.jpg",
-  "Mutuelle santé TNS": "sante1.jpg",                                                                               
-  "Prévoyance TNS": "prevoyance.jpg",
-  "Assurance emprunteur": "ass-emp.jpg",
-  "Plan Épargne Retraite": "per.jpg"
-} %}
-{% set est_pro = produit.categorie in ['Santé TNS', 'Prévoyance TNS'] %}
-{% set espace = 'Professionnels' if est_pro else 'Particuliers' %}
-{% set espace_url = '/professionnels' if est_pro else '/particuliers' %}
+{% set espace = produit.espace or 'Particuliers' %}
+{% set espace_url = '/' ~ (espace|lower) %}
 
 <section class="pv-bandeau" aria-labelledby="titre-produit">
   <div class="acc-conteneur">
@@ -84,7 +75,7 @@
     </div>
 
     <aside class="pv-fiche-cote" aria-labelledby="titre-conseiller">
-      <img class="pv-fiche-photo" src="{{ url_for('static', filename=images.get(produit.nom, 'particulier.jpg')) }}" alt="">
+      <img class="pv-fiche-photo" src="{{ url_for('static', filename=(produit.photo or 'particulier.jpg')) }}" alt="">
       <div class="pv-fiche-cote-corps">
         <h2 id="titre-conseiller">Un conseiller vous accompagne</h2>
         <p>Il comprend votre situation, compare les offres de nos partenaires et vous propose la couverture adaptée.</p>

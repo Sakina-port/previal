@@ -7,15 +7,7 @@
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='previal-pages.css') }}">
 
-{% set images = {
-  "Mutuelle santé particuliers": "particulier.jpg",
-  "Mutuelle santé seniors": "senior.jpg",
-  "Mutuelle santé TNS": "sante1.jpg",
-  "Prévoyance TNS": "prevoyance.jpg",
-  "Assurance emprunteur": "ass-emp.jpg",
-  "Plan Épargne Retraite": "per.jpg"
-} %}
-{% set est_espace = titre in ['Particuliers', 'Professionnels'] %}
+{% set est_espace = titre in ['Particuliers', 'Professionnels', 'Dirigeants'] %}
 {% set nombre = produits|length %}
 {% set colonnes = 2 if nombre in [2, 4] else 3 %}
 
@@ -30,6 +22,7 @@
     <ul class="pv-onglets">
       <li><a href="/particuliers"{% if titre == 'Particuliers' %} aria-current="page"{% endif %}>Particuliers</a></li>
       <li><a href="/professionnels"{% if titre == 'Professionnels' %} aria-current="page"{% endif %}>Professionnels</a></li>
+      <li><a href="/dirigeants"{% if titre == 'Dirigeants' %} aria-current="page"{% endif %}>Dirigeants</a></li>
     </ul>
     {% endif %}
   </div>
@@ -44,7 +37,7 @@
     <div class="pv-grille pv-grille-{{ colonnes }}">
       {% for produit in produits %}
       <article class="pv-produit">
-        <img class="pv-produit-photo" src="{{ url_for('static', filename=images.get(produit.nom, 'particulier.jpg')) }}" alt="">
+        <img class="pv-produit-photo" src="{{ url_for('static', filename=(produit.photo or 'particulier.jpg')) }}" alt="">
         <div class="pv-produit-corps">
           {% if produit.categorie %}<span class="pv-puce">{{ produit.categorie }}</span>{% endif %}
           <h3>{{ produit.nom }}</h3>
@@ -67,11 +60,11 @@
   <p>Un conseiller PREVIAL vous rappelle au créneau de votre choix et vous aide à trouver la couverture qui vous convient.</p>
   <div class="pv-aide-actions">
     <a href="/#formulaire-contact" class="acc-btn acc-btn-bleu">Être contacté</a>
-    {% if titre == 'Particuliers' %}
-    <a href="/professionnels" class="acc-btn acc-btn-ligne">Voir les produits Professionnels</a>
-    {% elif titre == 'Professionnels' %}
-    <a href="/particuliers" class="acc-btn acc-btn-ligne">Voir les produits Particuliers</a>
+    {% for nom_espace, adresse in [('Particuliers', '/particuliers'), ('Professionnels', '/professionnels'), ('Dirigeants', '/dirigeants')] %}
+    {% if est_espace and titre != nom_espace %}
+    <a href="{{ adresse }}" class="acc-btn acc-btn-ligne">Voir les produits {{ nom_espace }}</a>
     {% endif %}
+    {% endfor %}
   </div>
 </section>
 {% endblock %}
