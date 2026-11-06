@@ -37,7 +37,7 @@
     <div class="pv-grille pv-grille-{{ colonnes }}">
       {% for produit in produits %}
       <article class="pv-produit">
-        <img class="pv-produit-photo" src="{{ url_for('static', filename=(produit.photo or 'particulier.jpg')) }}" alt="">
+        <img class="pv-produit-photo" src="{{ url_for('static', filename=photo_produit(produit)) }}" alt="">
         <div class="pv-produit-corps">
           {% if produit.categorie %}<span class="pv-puce">{{ produit.categorie }}</span>{% endif %}
           <h3>{{ produit.nom }}</h3>

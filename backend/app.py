@@ -21,6 +21,7 @@ from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur,
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents, notifier_equipe_depot
 from stockage import enregistrer_fichier, lire_fichier, supprimer_fichier, StockageErreur, existe_dans_bucket, adresse_temporaire
+from photos_produits import photo_du_produit
 from config_base import configurer_base
 
 load_dotenv()
@@ -37,6 +38,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 AFFICHER_FONCTIONNALITES_MASQUEES = os.getenv('AFFICHER_FONCTIONNALITES_MASQUEES', 'False') == 'True'
 db.init_app(app)
 configurer_mail(app)
+app.jinja_env.globals["photo_produit"] = photo_du_produit
 
 login_manager = LoginManager()
 login_manager.init_app(app)

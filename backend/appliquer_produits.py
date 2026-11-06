@@ -107,7 +107,7 @@ def fiche_produit(produit_id):
 
 CARTE_DIRIGEANTS = '''
       <article class="acc-espace">
-        <img src="{{ url_for('static', filename='profe.jpg') }}" alt="">
+        <img src="{{ url_for('static', filename='diri.jpg') }}" alt="">
         <div class="acc-espace-corps">
           <h3>Dirigeants</h3>
           <p>Mutuelle et prévoyance TNS, retraite, assurance homme clé : protégez-vous et protégez votre entreprise.</p>
@@ -182,7 +182,7 @@ def preparer_code():
                     '''<li><a href="/professionnels"{% if titre == 'Professionnels' %} aria-current="page"{% endif %}>Professionnels</a></li>''',
                     '''<li><a href="/professionnels"{% if titre == 'Professionnels' %} aria-current="page"{% endif %}>Professionnels</a></li>
       <li><a href="/dirigeants"{% if titre == 'Dirigeants' %} aria-current="page"{% endif %}>Dirigeants</a></li>''')
-    liste.regex("photo lue dans la base", r"images\.get\(produit\.nom,\s*'[^']*'\)", "(produit.photo or 'particulier.jpg')")
+    liste.regex("photo lue dans la base", r"images\.get\(produit\.nom,\s*'[^']*'\)", "(produit.photo or 'diri.jpg')")
     liste.regex("boutons vers les deux autres espaces",
                 r"\{% if titre == 'Particuliers' %\}\s*<a href=\"/professionnels\" class=\"acc-btn acc-btn-ligne\">.*?\{% endif %\}",
                 BOUTONS_AUTRES_ESPACES, flags=re.S)

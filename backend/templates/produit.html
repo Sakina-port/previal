@@ -75,7 +75,7 @@
     </div>
 
     <aside class="pv-fiche-cote" aria-labelledby="titre-conseiller">
-      <img class="pv-fiche-photo" src="{{ url_for('static', filename=(produit.photo or 'particulier.jpg')) }}" alt="">
+      <img class="pv-fiche-photo" src="{{ url_for('static', filename=photo_produit(produit)) }}" alt="">
       <div class="pv-fiche-cote-corps">
         <h2 id="titre-conseiller">Un conseiller vous accompagne</h2>
         <p>Il comprend votre situation, compare les offres de nos partenaires et vous propose la couverture adaptée.</p>
