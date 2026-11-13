@@ -17,6 +17,7 @@
 
   <div id="panel-connexion">
     <form method="POST" action="/compte">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-group" style="text-align:left;">
         <label>E-mail</label>
         <input type="email" name="email" required>
@@ -31,6 +32,7 @@
 
   <div id="panel-inscription" style="display:none;">
     <form method="POST" action="/inscription">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-group" style="text-align:left;">
         <label>Nom</label>
         <input type="text" name="nom" required>

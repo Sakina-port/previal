@@ -23,6 +23,7 @@
   </div>
 
   <form method="POST" action="/dossiers/{{ dossier.id }}/signature" id="form-signature">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="signature_data" id="signature_data">
 
     <label style="display:flex; align-items:flex-start; gap:8px; text-align:left; font-size:13px; margin:20px 0;">

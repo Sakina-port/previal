@@ -33,6 +33,7 @@
     <section class="eq-bloc" aria-labelledby="titre-statut">
       <h2 id="titre-statut">Statut du dossier</h2>
       <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/statut" class="eq-filtres" style="margin-top:14px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <select name="statut" aria-label="Statut du dossier">
           {% for valeur, libelle in statuts %}
           <option value="{{ valeur }}"{% if valeur == dossier.statut %} selected{% endif %}>{{ libelle }}</option>
@@ -44,6 +45,7 @@
       {% if est_admin %}
       <div class="eq-actions-ligne">
         <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/archivage" class="eq-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           {% if dossier.archive %}
           <input type="hidden" name="action" value="desarchiver">
           <button type="submit" class="eq-btn eq-btn-secondaire">Désarchiver ce dossier</button>
@@ -127,6 +129,7 @@
       {% if est_admin %}
       <h3>Demander des pièces</h3>
       <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/demande-documents">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="eq-cases">
           {% for valeur, libelle in pieces %}
           <label><input type="checkbox" name="pieces" value="{{ valeur }}"> {{ libelle }}</label>
@@ -138,6 +141,7 @@
       <h3>Ajouter un devis d'assureur</h3>
       <p class="eq-aide">Document interne : il n'est pas visible par le client.</p>
       <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/devis-assureur" enctype="multipart/form-data" class="eq-filtres">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <select name="categorie" aria-label="Assureur" required>
           {% for valeur, libelle in categories_devis.items() %}
           <option value="{{ valeur }}">{{ libelle }}</option>
@@ -169,6 +173,7 @@
               <td>
                 {% if dem.etat == "Actif" and est_admin %}
                 <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/demande-documents/{{ dem.id }}/revoquer" class="eq-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="eq-lien-bouton eq-lien-danger">Annuler le lien</button>
                 </form>
                 {% endif %}
@@ -199,6 +204,7 @@
                 <a href="/equipe/documents/{{ d.id }}/telecharger" target="_blank" class="eq-lien">Ouvrir</a>
                 &nbsp;
                 <form method="POST" action="/equipe/documents/{{ d.id }}/supprimer" class="eq-inline" onsubmit="return confirm('Mettre ce document à la corbeille ?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="eq-lien-bouton eq-lien-danger">Supprimer</button>
                 </form>
                 {% endif %}
@@ -229,10 +235,12 @@
               <td>{{ s.nom_original }}</td>
               <td>
                 <form method="POST" action="/equipe/documents/{{ s.id }}/restaurer" class="eq-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="eq-lien-bouton">Restaurer</button>
                 </form>
                 &nbsp;
                 <form method="POST" action="/equipe/documents/{{ s.id }}/supprimer-definitivement" class="eq-inline" onsubmit="return confirm('Supprimer définitivement ce document ? Cette action est irréversible.');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="eq-lien-bouton eq-lien-danger">Supprimer définitivement</button>
                 </form>
               </td>
@@ -248,6 +256,7 @@
       <h2 id="titre-notes">Notes internes</h2>
       <p class="eq-aide">Ces notes sont visibles uniquement par l'équipe PREVIAL.</p>
       <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/notes">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="eq-champ" style="margin-bottom:14px;">
           <label for="note-contenu">Nouvelle note</label>
           <textarea id="note-contenu" name="contenu" rows="3" placeholder="Ex. : pas de réponse, rappeler mardi matin" required></textarea>
@@ -273,6 +282,7 @@
       <h2 id="titre-rappels">Rappels</h2>
       <p class="eq-aide">Pour ne rien oublier : indique quand agir et ce qu'il faut faire.</p>
       <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/rappels" class="eq-filtres">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="datetime-local" name="date_rappel" aria-label="Date et heure du rappel" required>
         <input type="text" name="contenu" maxlength="255" placeholder="Ex. : rappeler pour la pièce d'identité" aria-label="Ce qu'il faut faire" style="flex: 2 1 260px;" required>
         <button type="submit" class="eq-btn">Ajouter le rappel</button>
@@ -294,6 +304,7 @@
                 <span class="eq-badge eq-badge-ok">Fait le {{ r.date_fait|heure_paris }}</span>
                 {% else %}
                 <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/rappels/{{ r.id }}/fait" class="eq-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="eq-lien-bouton">Marquer comme fait</button>
                 </form>
                 {% endif %}
@@ -312,6 +323,7 @@
       <h2 id="titre-partenaires">Partenaires / devis</h2>
       <p class="eq-aide">Note les partenaires interrogés pour ce dossier et où en est l'étude.</p>
       <form method="POST" action="/equipe/dossiers/{{ dossier.id }}/partenaires" class="eq-filtres">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <select name="partenaire" aria-label="Partenaire" required>
           {% for p in partenaires %}
           <option value="{{ p }}">{{ p }}</option>

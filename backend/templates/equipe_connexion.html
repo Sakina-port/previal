@@ -16,6 +16,7 @@
       </div>
 
       <form method="POST" action="/equipe" class="eq-bloc">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% if erreur %}
         <div role="alert" class="eq-message eq-message-erreur">{{ erreur }}</div>
         {% endif %}

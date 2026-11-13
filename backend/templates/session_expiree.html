@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}PREVIAL : page expirée{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='previal-pages.css') }}">
+<section class="pv-bandeau">
+  <div class="acc-conteneur">
+    <h1>Page expirée</h1>
+  </div>
+</section>
+<section style="padding: 48px 0 80px;">
+  <div class="acc-conteneur" style="max-width: 720px;">
+    <p style="font-size: 1.1rem; line-height: 1.7;">{{ message }}</p>
+    <p style="display: flex; flex-wrap: wrap; gap: 12px;">
+      <a class="acc-btn acc-btn-bleu" href="javascript:history.back()">Revenir à la page précédente</a>
+      <a class="acc-btn acc-btn-ligne" href="/">Retour à l'accueil</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

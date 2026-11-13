@@ -9,6 +9,7 @@
   <p class="intro">Remplissez ce formulaire pour obtenir votre devis.</p>
 
   <form method="POST" action="/produits/{{ produit.id }}/devis">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% for champ in produit.formulaire_schema.champs %}
       <div class="form-group">
         <label for="{{ champ.nom }}">{{ champ.label }}</label>

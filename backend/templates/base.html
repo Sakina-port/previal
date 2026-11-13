@@ -112,17 +112,7 @@
   </div>
 </footer>
 
-<!-- div class="chatbot-bulle" id="chatbot-bulle"💬div -->
-
-<div class="chatbot-panneau" id="chatbot-panneau">
-  <div class="chatbot-header">
-    Assistant Prévial
-    <span id="chatbot-fermer">✕</span>
-  </div>
-  <div class="chatbot-corps">
-    <p>Bonjour 👋 Cette fonctionnalité arrive bientôt. En attendant, contactez-nous directement !</p>
-  </div>
-</div>
+{% if assistant_widget is defined %}{{ assistant_widget() }}{% endif %}
 
 <script>
   document.querySelectorAll('[data-bg]').forEach(function(el){

@@ -38,6 +38,7 @@
       <div id="depot-alerte" class="pv-alerte" role="alert" tabindex="-1" hidden></div>
 
       <form method="POST" action="/depot/{{ token }}" enctype="multipart/form-data" id="form-depot">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% for valeur, libelle in pieces %}
         <div class="pv-piece">
           <h2><label for="fichier_{{ valeur }}">{{ libelle }}</label></h2>

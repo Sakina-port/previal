@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, redirect, abort, Response, se
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect, CSRFError
 import os
 import secrets
 import bcrypt
@@ -21,6 +24,7 @@ from models import db, Produit, Dossier, Devis, Contrat, Signature, Utilisateur,
 from moteur_devis import obtenir_devis
 from mailer import configurer_mail, envoyer_documents, envoyer_accuse_reception, notifier_equipe_nouvelle_demande, envoyer_demande_documents, notifier_equipe_depot
 from stockage import enregistrer_fichier, lire_fichier, supprimer_fichier, StockageErreur, existe_dans_bucket, adresse_temporaire
+from assistant import assistant_bp
 from photos_produits import photo_du_produit
 from config_base import configurer_base
 
@@ -35,14 +39,48 @@ if SUR_VERCEL and not os.getenv('SECRET_KEY'):
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change-moi-plus-tard')
 app.config['MAX_CONTENT_LENGTH'] = 60 * 1024 * 1024
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+app.config['WTF_CSRF_TIME_LIMIT'] = None
 AFFICHER_FONCTIONNALITES_MASQUEES = os.getenv('AFFICHER_FONCTIONNALITES_MASQUEES', 'False') == 'True'
 db.init_app(app)
+csrf = CSRFProtect(app)   # contrôle le jeton CSRF sur POST, PUT, PATCH et DELETE, pour toutes les routes
+
+
+@app.errorhandler(CSRFError)
+def jeton_csrf_invalide(erreur):
+    message = "Votre session a expiré ou la page est trop ancienne. Rechargez la page, puis recommencez."
+    if request.is_json:
+        return Response(json.dumps({"ok": False, "reponse": message}, ensure_ascii=False), status=400, mimetype="application/json")
+    try:
+        return render_template("session_expiree.html", message=message), 400
+    except Exception:   # même si la page ne peut pas s'afficher, la requête reste refusée proprement
+        return Response("<p>" + message + "</p>", status=400, mimetype="text/html")
 configurer_mail(app)
+app.register_blueprint(assistant_bp)
 app.jinja_env.globals["photo_produit"] = photo_du_produit
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "compte"
+
+# Limitation des tentatives de connexion : 5 par minute et 20 par heure, par adresse IP, échecs seulement.
+# Les compteurs sont gardés en mémoire (un seul serveur). Pour plusieurs serveurs : LIMITEUR_STOCKAGE=redis://... dans .env
+limiter = Limiter(get_remote_address, app=app, default_limits=[], strategy="moving-window", headers_enabled=True,
+                  storage_uri=os.getenv("LIMITEUR_STOCKAGE", "memory://"))
+LIMITES_CONNEXION = "5 per minute;20 per hour"
+
+
+@app.errorhandler(429)
+def trop_de_tentatives(erreur):
+    message = "Trop de tentatives de connexion. Réessayez dans quelques minutes."
+    app.logger.warning("Limite de tentatives atteinte : %s sur %s", request.remote_addr, request.path)
+    try:
+        if request.path.startswith("/equipe"):
+            return render_template("equipe_connexion.html", erreur=message), 429
+        if request.path.startswith("/compte"):
+            return render_template("compte.html", erreur=message), 429
+    except Exception:   # même si la page ne peut pas s'afficher, la réponse reste un refus clair
+        pass
+    return Response(message, status=429, mimetype="text/plain; charset=utf-8")
 
 
 @app.before_request
@@ -251,8 +289,10 @@ def formulaire(produit_id):
     return render_template("formulaire.html", produit=produit)
 
 
-@app.route("/dossiers/<int:dossier_id>/refuser")
+@app.route("/dossiers/<int:dossier_id>/refuser", methods=["POST"])
 def refuser_devis(dossier_id):
+    if not AFFICHER_FONCTIONNALITES_MASQUEES:
+        abort(404)
     dossier = Dossier.query.get_or_404(dossier_id)
     dossier.statut = "refuse"
     db.session.commit()
@@ -339,6 +379,7 @@ def signature(dossier_id):
 
 
 @app.route("/compte", methods=["GET", "POST"])
+@limiter.limit(LIMITES_CONNEXION, methods=["POST"], deduct_when=lambda reponse: reponse.status_code == 200)
 def compte():
     if not AFFICHER_ESPACE_CLIENT:
         abort(404)
@@ -593,6 +634,7 @@ def sitemap_xml():
 
 
 @app.route("/equipe", methods=["GET", "POST"])
+@limiter.limit(LIMITES_CONNEXION, methods=["POST"], deduct_when=lambda reponse: reponse.status_code == 200)
 def equipe_connexion():
     if request.method == "POST":
         email = request.form.get("email", "").strip()

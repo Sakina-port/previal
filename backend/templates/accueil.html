@@ -239,6 +239,7 @@
     </div>
     {% else %}
     <form method="POST" action="/contact#formulaire-contact" id="form-contact" class="acc-carte-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <div class="form-step" data-step="1">
         <div class="acc-etape-titre">Étape 1 sur 3 : vos coordonnées</div>
