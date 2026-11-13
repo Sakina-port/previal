@@ -495,7 +495,9 @@ def valider_formulaire(reponses):
         erreurs.append("Le nom et le prénom ne doivent pas dépasser 100 caractères.")
 
     telephone = re.sub(r"[ .\-()]", "", reponses["telephone"])
-    if not re.fullmatch(r"\+?\d{8,15}", telephone):
+    if re.search(r"[^0-9+]", telephone):
+        erreurs.append("Le numéro de téléphone ne doit contenir que des chiffres.")
+    elif not re.fullmatch(r"\+?[0-9]{8,15}", telephone):
         erreurs.append("Le numéro de téléphone n'est pas valide.")
 
     email = reponses["email"]
